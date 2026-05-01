@@ -4,6 +4,7 @@ from powerbi_analyzer.domain.semantic_model import SemanticModel
 from powerbi_analyzer.engine import Engine
 from powerbi_analyzer.reporters.markdown import MarkdownReporter
 from powerbi_analyzer.rules import RuleRegistry
+
 from tests.builders import make_relationship, make_semantic_model
 
 

@@ -49,3 +49,11 @@ def test_fails_when_model_says_nullable_but_source_not_null():
     f = rule.check(m, cat)
     assert f.status is Status.FAIL
     assert "t[id]" in f.evidence["columns"]
+
+
+def test_passes_when_no_catalog_tables():
+    # If catalog has no tables, there is nothing to compare against — pass trivially.
+    m = make_semantic_model(
+        tables=[make_table(name="t", columns=[make_column(name="id", is_nullable=True)])]
+    )
+    assert rule.check(m, make_catalog_state()).status is Status.PASS

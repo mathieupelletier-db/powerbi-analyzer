@@ -23,3 +23,8 @@ def test_fails_when_single_mode():
         ]
     )
     assert rule.check(m).status is Status.FAIL
+
+
+def test_passes_when_no_tables():
+    # An empty model has nothing to recommend, so the rule passes trivially.
+    assert rule.check(make_semantic_model(tables=[])).status is Status.PASS

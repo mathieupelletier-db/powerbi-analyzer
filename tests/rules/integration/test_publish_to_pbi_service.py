@@ -16,3 +16,14 @@ def test_fails():
         rule.check(make_workspace_config(publish_to_pbi_service=False), make_catalog_state()).status
         is Status.FAIL
     )
+
+
+def test_fail_evidence_lists_gold_tables():
+    from tests.builders import make_table_metadata
+
+    cat = make_catalog_state(
+        tables=[make_table_metadata(full_name="main.gold.dim_customer", layer="gold")]
+    )
+    f = rule.check(make_workspace_config(publish_to_pbi_service=False), cat)
+    assert f.status is Status.FAIL
+    assert "main.gold.dim_customer" in f.evidence["gold_tables_visible"]

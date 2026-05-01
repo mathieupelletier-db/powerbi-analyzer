@@ -12,3 +12,8 @@ def test_passes_when_endpoint_param():
 
 def test_fails_when_no_endpoint_param():
     assert rule.check(make_semantic_model()).status is Status.FAIL
+
+
+def test_passes_when_server_param():
+    m = make_semantic_model(parameters=[Parameter(name="server_hostname", data_type="text")])
+    assert rule.check(m).status is Status.PASS

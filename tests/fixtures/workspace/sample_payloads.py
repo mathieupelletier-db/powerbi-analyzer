@@ -1,4 +1,5 @@
 """Sample payloads for workspace collector tests (optional reference fixtures)."""
+
 from __future__ import annotations
 
 SAMPLE_DATASETS = [

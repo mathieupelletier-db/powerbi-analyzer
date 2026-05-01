@@ -1,5 +1,6 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.report_design import avoid_many_to_many as rule
+
 from tests.builders import make_relationship, make_semantic_model
 
 

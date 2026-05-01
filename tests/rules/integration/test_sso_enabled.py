@@ -10,3 +10,10 @@ def test_passes():
 
 def test_fails():
     assert rule.check(make_workspace_config(sso_enabled=False)).status is Status.FAIL
+
+
+def test_fail_finding_has_severity_error():
+    from powerbi_analyzer.domain.finding import Severity
+
+    f = rule.check(make_workspace_config(sso_enabled=False))
+    assert f.severity is Severity.ERROR

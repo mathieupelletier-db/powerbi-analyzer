@@ -1,4 +1,5 @@
 """WorkspaceCollector — Power BI REST + DAX INFO queries."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

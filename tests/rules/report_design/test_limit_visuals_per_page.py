@@ -19,3 +19,8 @@ def test_fails_over_limit():
     f = rule.check(m)
     assert f.status is Status.FAIL
     assert f.evidence["pages"]["P1"] == 20
+
+
+def test_passes_empty_report():
+    # A model with no pages defined should pass.
+    assert rule.check(make_semantic_model(visuals_by_page={})).status is Status.PASS

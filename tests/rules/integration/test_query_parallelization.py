@@ -18,3 +18,15 @@ def test_passes_when_tuned():
 def test_fails_when_default():
     cfg = make_workspace_config(parallelism=ParallelismConfig(max_parallelism_per_query=1))
     assert rule.check(cfg).status is Status.FAIL
+
+
+def test_fails_when_low_simultaneous_evaluations():
+    cfg = make_workspace_config(
+        parallelism=ParallelismConfig(
+            max_parallelism_per_query=10,
+            max_simultaneous_evaluations=2,
+        )
+    )
+    f = rule.check(cfg)
+    assert f.status is Status.FAIL
+    assert any("MaxSimultaneousEvaluations" in s for s in f.evidence["settings"])

@@ -17,3 +17,9 @@ def test_fails_mixed_bi_and_etl():
         ]
     )
     assert rule.check(wh).status is Status.FAIL
+
+
+def test_passes_pure_etl():
+    # A warehouse used exclusively for ETL has no BI traffic, so the rule passes.
+    wh = make_warehouse(query_history=[make_query(client_application="airflow-scheduler")] * 5)
+    assert rule.check(wh).status is Status.PASS

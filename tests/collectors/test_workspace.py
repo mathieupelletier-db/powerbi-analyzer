@@ -1,10 +1,10 @@
 """Tests for WorkspaceCollector using injected stub clients."""
+
 from __future__ import annotations
 
 from typing import Any
 
 import pytest
-
 from powerbi_analyzer.collectors.workspace import (
     PowerBiRestClient,
     WorkspaceCollector,
