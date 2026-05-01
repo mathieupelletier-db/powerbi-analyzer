@@ -26,7 +26,8 @@ venv/
 .vscode/
 *.swp
 
-# pba runtime
-~/.cache/pba/
+# pba runtime (cache lives at ~/.cache/pba/, outside the repo — no entry needed)
 reports/
 .pba-cache/
+pba.yaml
+uv.lock
