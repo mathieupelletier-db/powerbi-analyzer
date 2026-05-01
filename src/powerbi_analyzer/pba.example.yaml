@@ -1,0 +1,32 @@
+# pba.yaml — Power BI Analyzer config
+# Required permissions:
+#   Power BI: Dataset.Read.All, Workspace.Read.All, Tenant.Read.All
+#   Databricks: USE CATALOG on each catalog; SELECT on system.query.history,
+#     system.compute.warehouse_events, system.information_schema.*; CAN_USE warehouse.
+
+output:
+  formats: [markdown, html]
+  dir: reports/
+
+pbix:
+  files: ["reports/*.pbix"]
+
+workspace:
+  tenant_id: ${PBI_TENANT_ID}
+  workspace_id: <guid>
+  datasets: auto                  # or explicit list of dataset GUIDs
+  auth: device_code               # device_code | service_principal
+
+databricks:
+  profile: DEFAULT
+  warehouse_id: <id>
+  catalogs: ["main.gold"]
+  query_history_lookback_days: 30
+
+rules:
+  ignore: []                      # e.g., ["RD-007"]
+
+thresholds:
+  large_table_gb: 10
+  visuals_per_page_max: 12
+  string_max_length: 1000
