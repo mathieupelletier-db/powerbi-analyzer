@@ -1,10 +1,11 @@
 """MSAL-based token resolver for Power BI REST."""
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
-import msal  # type: ignore[import-untyped]
+import msal
 
 CACHE_PATH = Path.home() / ".cache" / "pba" / "msal_cache.json"
 SCOPES = ["https://analysis.windows.net/powerbi/api/.default"]

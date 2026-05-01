@@ -62,6 +62,10 @@ strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["build/", "dist/"]
 
+[[tool.mypy.overrides]]
+module = ["msal", "msal.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
