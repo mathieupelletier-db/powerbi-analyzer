@@ -1,0 +1,329 @@
+# Power BI on Databricks Audit — goldens
+
+Generated 2026-05-01 12:00 UTC by pba 0.1.0
+
+Modes run: pbix, workspace, databricks
+
+## Summary
+
+| Phase | Score | Pass | Warn | Error | Info | N/A |
+|---|---|---|---|---|---|---|
+| Data Preparation | 100/100 | 10 | 0 | 0 | 0 | 0 |
+| SQL Serving | 100/100 | 10 | 0 | 0 | 0 | 0 |
+| Power BI Integration | 58/100 | 7 | 1 | 0 | 3 | 0 |
+| Power BI Report Design | 100/100 | 11 | 0 | 0 | 0 | 0 |
+| **Overall** | **90/100** | | | | | |
+
+### Top 5 highest-impact issues
+
+1. **[IN-006] Tune Power BI query parallelization** (warn) — Parallelism settings at low/default values.
+2. **[IN-008] Use parameters for environment switching** (info) — No parameter found for switching connection endpoints.
+3. **[IN-010] Use Publish to Power BI Service from Databricks** (info) — Publish to Power BI Service not enabled.
+4. **[IN-011] Use Automatic Publishing from Unity Catalog** (info) — 1 Gold table(s) not enrolled in Automatic Publishing.
+
+## Data Preparation
+
+### ✅ DP-001 Adopt medallion architecture (serve Gold) (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** All Power BI-referenced tables are in Gold-layer schemas.
+**Reference:** [https://docs.databricks.com/lakehouse/medallion.html](https://docs.databricks.com/lakehouse/medallion.html)
+
+### ✅ DP-002 Use star schema (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No dim-to-dim relationships detected.
+**Reference:** [https://learn.microsoft.com/power-bi/guidance/star-schema](https://learn.microsoft.com/power-bi/guidance/star-schema)
+
+### ✅ DP-003 Use SQL views or persisted tables for repeated aggregations (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No Power BI history.
+**Reference:** [https://docs.databricks.com/sql/user/queries/index.html](https://docs.databricks.com/sql/user/queries/index.html)
+
+### ✅ DP-004 Declare PK/FK with RELY (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** All Power BI tables have PK constraints with RELY.
+**Reference:** [https://docs.databricks.com/tables/constraints.html](https://docs.databricks.com/tables/constraints.html)
+
+### ✅ DP-005 Avoid wide and high-cardinality types (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No wide or high-cardinality column types in Power BI tables.
+**Reference:** [https://docs.databricks.com/tables/index.html](https://docs.databricks.com/tables/index.html)
+
+### ✅ DP-006 Use auto-generated (computed) columns (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No Power BI history.
+**Reference:** [https://docs.databricks.com/sql/language-manual/sql-ref-syntax-ddl-create-table-using.html](https://docs.databricks.com/sql/language-manual/sql-ref-syntax-ddl-create-table-using.html)
+
+### ✅ DP-007 Use Liquid Clustering or Z-order (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** All large PBI tables have clustering configured.
+**Reference:** [https://docs.databricks.com/delta/clustering.html](https://docs.databricks.com/delta/clustering.html)
+
+### ✅ DP-008 Predictive Optimization or recent OPTIMIZE/VACUUM (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** All PBI tables either use Predictive Optimization or were recently optimized.
+**Reference:** [https://docs.databricks.com/optimizations/predictive-optimization.html](https://docs.databricks.com/optimizations/predictive-optimization.html)
+
+### ✅ DP-009 Compute column statistics (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** All PBI tables have column statistics.
+**Reference:** [https://docs.databricks.com/sql/language-manual/sql-ref-syntax-aux-analyze-table.html](https://docs.databricks.com/sql/language-manual/sql-ref-syntax-aux-analyze-table.html)
+
+### ✅ DP-010 Evaluate materialized views (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No Power BI history.
+**Reference:** [https://docs.databricks.com/sql/user/materialized-views.html](https://docs.databricks.com/sql/user/materialized-views.html)
+
+## SQL Serving
+
+### ✅ SS-001 Use SQL warehouse, not all-purpose cluster (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No Power BI queries observed on all-purpose clusters.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html](https://docs.databricks.com/sql/admin/sql-endpoints.html)
+
+### ✅ SS-002 Use Serverless SQL warehouse (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** Warehouse is Serverless.
+**Reference:** [https://docs.databricks.com/sql/admin/serverless.html](https://docs.databricks.com/sql/admin/serverless.html)
+
+### ✅ SS-003 Enable SQL warehouse Auto stop (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** Auto stop set to 10 minutes.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#auto-stop](https://docs.databricks.com/sql/admin/sql-endpoints.html#auto-stop)
+
+### ✅ SS-004 Right-size warehouse for dataset (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No Power BI compute samples — cannot evaluate sizing.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes](https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes)
+
+### ✅ SS-005 Configure SQL warehouse scaling (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** max_clusters=4.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling](https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling)
+
+### ✅ SS-006 Increase min clusters for concurrent traffic (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** min_clusters=1; long waits=0.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling](https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling)
+
+### ✅ SS-007 Same warehouse for same dataset (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No table seen across multiple warehouses.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#cache](https://docs.databricks.com/sql/admin/sql-endpoints.html#cache)
+
+### ✅ SS-008 Separate warehouses for different workloads (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** BI=0 ETL=0; not mixed.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html](https://docs.databricks.com/sql/admin/sql-endpoints.html)
+
+### ✅ SS-009 Reasonable starting warehouse size (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** Size Medium.
+**Reference:** [https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes](https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes)
+
+### ✅ SS-010 Monitor via system tables (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** No scaling events in lookback window.
+**Reference:** [https://docs.databricks.com/admin/system-tables/index.html](https://docs.databricks.com/admin/system-tables/index.html)
+
+## Power BI Integration
+
+### ⚠️ IN-006 Tune Power BI query parallelization (warn)
+**Target:** ws-1
+**Status:** fail
+**Summary:** Parallelism settings at low/default values.
+**Why it matters:** Default parallelism caps PBI's ability to parallelize across visuals and workers.
+**How to fix:** Increase MaxParallelismPerQuery to 10+ and MaxSimultaneousEvaluations to 6+.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode](https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode)
+                <details><summary>Evidence</summary>
+
+                ```json
+                {
+  "settings": [
+    "MaxParallelismPerQuery=None"
+  ]
+}
+                ```
+                </details>
+
+### ℹ️ IN-008 Use parameters for environment switching (info)
+**Target:** Sales
+**Status:** fail
+**Summary:** No parameter found for switching connection endpoints.
+**Why it matters:** Hardcoded warehouse URLs make dev → prod migration painful.
+**How to fix:** Define an M parameter (e.g., 'warehouse_endpoint') and reference it in the connection string.
+**Reference:** [https://learn.microsoft.com/power-bi/connect-data/desktop-dynamic-m-query-parameters](https://learn.microsoft.com/power-bi/connect-data/desktop-dynamic-m-query-parameters)
+                <details><summary>Evidence</summary>
+
+                ```json
+                {
+  "parameters": [],
+  "heuristic": "best-effort — review and ignore if intentional"
+}
+                ```
+                </details>
+
+### ℹ️ IN-010 Use Publish to Power BI Service from Databricks (info)
+**Target:** ws-1
+**Status:** fail
+**Summary:** Publish to Power BI Service not enabled.
+**Why it matters:** Publish-from-UC keeps the semantic model in sync with Gold without manual refresh.
+**How to fix:** Enable Publish to Power BI Service from the Unity Catalog table page.
+**Reference:** [https://docs.databricks.com/integrations/configure-power-bi-online-service.html](https://docs.databricks.com/integrations/configure-power-bi-online-service.html)
+                <details><summary>Evidence</summary>
+
+                ```json
+                {
+  "gold_tables_visible": [
+    "main.gold.fact_sales"
+  ]
+}
+                ```
+                </details>
+
+### ℹ️ IN-011 Use Automatic Publishing from Unity Catalog (info)
+**Target:** ws-1
+**Status:** fail
+**Summary:** 1 Gold table(s) not enrolled in Automatic Publishing.
+**Why it matters:** Automatic Publishing pushes UC schema changes to Power BI without manual intervention.
+**How to fix:** Enable Automatic Publishing on the Gold catalog/schema.
+**Reference:** [https://docs.databricks.com/integrations/configure-power-bi-online-service.html](https://docs.databricks.com/integrations/configure-power-bi-online-service.html)
+                <details><summary>Evidence</summary>
+
+                ```json
+                {
+  "gold_tables_sample": [
+    "main.gold.fact_sales"
+  ]
+}
+                ```
+                </details>
+
+### ✅ IN-001 Same region for Power BI and Databricks (pass)
+**Target:** bi-prod
+**Status:** pass
+**Summary:** PBI eastus ↔ Databricks us-east-1.
+**Reference:** [https://learn.microsoft.com/power-bi/admin/service-admin-where-is-my-tenant-located](https://learn.microsoft.com/power-bi/admin/service-admin-where-is-my-tenant-located)
+
+### ✅ IN-002 Use DirectQuery on facts and Dual on dimensions (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** Storage modes look appropriate.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode](https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode)
+
+### ✅ IN-003 Consider composite models (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No tables.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-composite-models](https://learn.microsoft.com/power-bi/transform-model/desktop-composite-models)
+
+### ✅ IN-004 Consider hybrid tables for large facts (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No large pure-DirectQuery facts found.
+**Reference:** [https://learn.microsoft.com/power-bi/connect-data/desktop-incremental-refresh#hybrid-tables](https://learn.microsoft.com/power-bi/connect-data/desktop-incremental-refresh#hybrid-tables)
+
+### ✅ IN-005 Use incremental refresh for large Import tables (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** All large Import tables use incremental refresh.
+**Reference:** [https://learn.microsoft.com/power-bi/connect-data/incremental-refresh-overview](https://learn.microsoft.com/power-bi/connect-data/incremental-refresh-overview)
+
+### ✅ IN-007 Enable SSO between Power BI and Databricks (pass)
+**Target:** ws-1
+**Status:** pass
+**Summary:** SSO is enabled.
+**Reference:** [https://docs.databricks.com/integrations/configure-power-bi-sso.html](https://docs.databricks.com/integrations/configure-power-bi-sso.html)
+
+### ✅ IN-009 Use clustered gateways (pass)
+**Target:** ws-1
+**Status:** pass
+**Summary:** No gateway in use.
+**Reference:** [https://learn.microsoft.com/data-integration/gateway/service-gateway-high-availability-clusters](https://learn.microsoft.com/data-integration/gateway/service-gateway-high-availability-clusters)
+
+## Power BI Report Design
+
+### ✅ RD-001 Limit visuals per page (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** Each page has ≤ 12 visuals.
+**Reference:** [https://learn.microsoft.com/power-bi/guidance/power-bi-optimization](https://learn.microsoft.com/power-bi/guidance/power-bi-optimization)
+
+### ✅ RD-002 Limit rows and columns surfaced in DirectQuery (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No DirectQuery table has > 50 columns.
+**Reference:** [https://learn.microsoft.com/power-bi/guidance/power-bi-optimization](https://learn.microsoft.com/power-bi/guidance/power-bi-optimization)
+
+### ✅ RD-003 Use user-defined aggregations on large fact tables (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No large unsupported fact, or aggregations already mapped.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/aggregations-advanced](https://learn.microsoft.com/power-bi/transform-model/aggregations-advanced)
+
+### ✅ RD-004 Enable automatic aggregations for DirectQuery (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No DirectQuery tables; rule N/A.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/aggregations-auto](https://learn.microsoft.com/power-bi/transform-model/aggregations-auto)
+
+### ✅ RD-005 Avoid many-to-many relationships (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No many-to-many relationships found.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-many-to-many-relationships](https://learn.microsoft.com/power-bi/transform-model/desktop-many-to-many-relationships)
+
+### ✅ RD-006 Use Assume Referential Integrity where valid (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No NOT NULL fact-to-dim relationships missing ARI.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-relationships-troubleshoot](https://learn.microsoft.com/power-bi/transform-model/desktop-relationships-troubleshoot)
+
+### ✅ RD-007 Configure 'Is nullable' to match source (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** All columns' nullability matches source.
+**Reference:** [https://learn.microsoft.com/power-bi/transform-model/desktop-tutorial-create-calculated-columns](https://learn.microsoft.com/power-bi/transform-model/desktop-tutorial-create-calculated-columns)
+
+### ✅ RD-008 Move transformations left (prefer SQL views) (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No M transformations matching the move-left heuristic.
+**Reference:** [https://learn.microsoft.com/power-bi/guidance/power-query-folding](https://learn.microsoft.com/power-bi/guidance/power-query-folding)
+
+### ✅ RD-009 Use efficient DAX patterns (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No DAX smells matched.
+**Reference:** [https://learn.microsoft.com/dax/best-practices/dax-aggregators](https://learn.microsoft.com/dax/best-practices/dax-aggregators)
+
+### ✅ RD-010 Add Apply All Slicers when many slicers (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No slicer-heavy pages, or Apply All Slicers enabled.
+**Reference:** [https://learn.microsoft.com/power-bi/create-reports/desktop-query-reduction](https://learn.microsoft.com/power-bi/create-reports/desktop-query-reduction)
+
+### ✅ RD-011 Avoid DAX calculated columns and calculated tables (pass)
+**Target:** Sales
+**Status:** pass
+**Summary:** No DAX calculated columns or tables.
+**Reference:** [https://learn.microsoft.com/power-bi/guidance/import-modeling-data-reduction](https://learn.microsoft.com/power-bi/guidance/import-modeling-data-reduction)

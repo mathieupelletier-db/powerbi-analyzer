@@ -179,5 +179,95 @@ def run_databricks(
     return _exit_code(result.findings, fail_on)
 
 
-def run_scan(_config: Path) -> int:
-    raise NotImplementedError("pba scan wiring lands in a later task")
+def run_scan(config_path: Path) -> int:
+    from glob import glob
+
+    from powerbi_analyzer.collectors.pbix import PbixCollector
+    from powerbi_analyzer.config import load_config
+    from powerbi_analyzer.domain.catalog import CatalogState
+    from powerbi_analyzer.domain.semantic_model import SemanticModel, WorkspaceConfig
+    from powerbi_analyzer.domain.warehouse import WarehouseState
+    from powerbi_analyzer.reporters.html import HtmlReporter
+
+    cfg = load_config(config_path)
+    cache = RunCache()
+    context: dict[type, object] = {}
+    active: set[str] = set()
+    target_desc_parts: list[str] = []
+
+    if cfg.pbix.files:
+        # v1: only the first matched file (extending to many is later)
+        for pattern in cfg.pbix.files:
+            for path in glob(pattern):
+                model = PbixCollector(path=Path(path)).collect()
+                context[SemanticModel] = model
+                active.add("pbix")
+                target_desc_parts.append(Path(path).name)
+                break
+            else:
+                continue
+            break
+
+    if cfg.databricks.warehouse_id:
+        sql, ws = _make_databricks_clients(cfg.databricks.profile)
+        wh, cat = DatabricksCollector(
+            warehouse_id=cfg.databricks.warehouse_id,
+            catalogs=cfg.databricks.catalogs,
+            lookback_days=cfg.databricks.query_history_lookback_days,
+            sql=sql,
+            ws=ws,
+        ).collect()
+        context[WarehouseState] = wh
+        context[CatalogState] = cat
+        active.add("databricks")
+        target_desc_parts.append(f"warehouse {wh.warehouse_id}")
+
+    if cfg.workspace.workspace_id:
+        from powerbi_analyzer.auth_msal import get_token
+        from powerbi_analyzer.collectors.workspace import (
+            HttpPowerBiRestClient,
+            HttpXmlaRestClient,
+            WorkspaceCollector,
+        )
+
+        token = get_token(tenant_id=cfg.workspace.tenant_id, auth=cfg.workspace.auth)
+        ds_ids = None if cfg.workspace.datasets == "auto" else cfg.workspace.datasets
+        sm, wcfg = WorkspaceCollector(
+            workspace_id=cfg.workspace.workspace_id,
+            dataset_ids=ds_ids if isinstance(ds_ids, list) else None,
+            rest=HttpPowerBiRestClient(token),
+            xmla=HttpXmlaRestClient(token),
+        ).collect()
+        context[SemanticModel] = sm
+        context[WorkspaceConfig] = wcfg
+        active.add("workspace")
+        target_desc_parts.append(f"workspace {wcfg.workspace_id}")
+
+    registry = RuleRegistry.discover()
+    engine = Engine(registry)
+    result = engine.run(active_modes=active, context=context, ignore=set(cfg.rules.ignore))
+    target_desc = ", ".join(target_desc_parts) or "(no targets)"
+
+    out_dir = Path(cfg.output.dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    base = f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}"
+    if "markdown" in cfg.output.formats:
+        md = MarkdownReporter().render(
+            result,
+            target_description=target_desc,
+            modes_run=sorted(active),
+            generated_at=datetime.now(UTC),
+            version=__version__,
+        )
+        (out_dir / f"{base}.md").write_text(md)
+    if "html" in cfg.output.formats:
+        html = HtmlReporter().render(
+            result,
+            target_description=target_desc,
+            modes_run=sorted(active),
+            generated_at=datetime.now(UTC),
+            version=__version__,
+        )
+        (out_dir / f"{base}.html").write_text(html)
+    print(f"wrote {base}.{'+'.join(cfg.output.formats)} to {out_dir}")
+    return 0
