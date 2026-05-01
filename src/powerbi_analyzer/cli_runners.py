@@ -10,8 +10,10 @@ from powerbi_analyzer import __version__
 from powerbi_analyzer.cache import RunCache
 from powerbi_analyzer.collectors._sql import SqlExecutor
 from powerbi_analyzer.collectors.databricks import DatabricksCollector, WorkspaceClient
+from powerbi_analyzer.collectors.pbix import PbixCollector
 from powerbi_analyzer.domain.catalog import CatalogState
 from powerbi_analyzer.domain.finding import Finding, Severity, Status
+from powerbi_analyzer.domain.semantic_model import SemanticModel
 from powerbi_analyzer.domain.warehouse import WarehouseState
 from powerbi_analyzer.engine import Engine
 from powerbi_analyzer.reporters.markdown import MarkdownReporter
@@ -35,8 +37,46 @@ def _exit_code(findings: Sequence[Finding], fail_on: str) -> int:
     return 2 if has else 0
 
 
-def run_pbix(**_: object) -> int:
-    raise NotImplementedError("pba pbix wiring lands in a later task")
+def run_pbix(
+    *,
+    paths: list[Path],
+    out: Path | None,
+    out_dir: Path | None,
+    formats: str,
+    severity_threshold: str,
+    ignore: set[str],
+    fail_on: str,
+) -> int:
+    cache = RunCache()
+    all_findings: list[Finding] = []
+    result = None
+    for p in paths:
+        model = PbixCollector(path=p).collect()
+        cache.write(f"pbix-{p.stem}", model.model_dump(mode="json"))
+        registry = RuleRegistry.discover()
+        engine = Engine(registry)
+        result = engine.run(
+            active_modes={"pbix"},
+            context={SemanticModel: model},
+            ignore=ignore,
+        )
+        all_findings.extend(result.findings)
+
+    if result is None:
+        # No paths provided — nothing to report
+        return 0
+
+    md = MarkdownReporter().render(
+        result,
+        target_description=", ".join(p.name for p in paths),
+        modes_run=["pbix"],
+        generated_at=datetime.now(UTC),
+        version=__version__,
+    )
+    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
+    target.write_text(md)
+    print(f"wrote {target}")
+    return _exit_code(all_findings, fail_on)
 
 
 def run_workspace(**_: object) -> int:

@@ -1,0 +1,85 @@
+{
+  "name": "small_good",
+  "compatibilityLevel": 1500,
+  "model": {
+    "tables": [
+      {
+        "name": "Fact_Sales",
+        "isHidden": false,
+        "columns": [
+          {
+            "name": "OrderId",
+            "dataType": "int64",
+            "isNullable": false,
+            "isKey": true,
+            "isHidden": false
+          },
+          {
+            "name": "CustomerId",
+            "dataType": "int64",
+            "isNullable": false
+          },
+          {
+            "name": "Revenue",
+            "dataType": "decimal",
+            "isNullable": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": ""
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "TotalRevenue",
+            "expression": "SUM(Fact_Sales[Revenue])"
+          }
+        ]
+      },
+      {
+        "name": "Dim_Customer",
+        "isHidden": false,
+        "columns": [
+          {
+            "name": "CustomerId",
+            "dataType": "int64",
+            "isKey": true
+          },
+          {
+            "name": "Name",
+            "dataType": "string"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "dual",
+            "source": {
+              "type": "m",
+              "expression": ""
+            }
+          }
+        ],
+        "measures": []
+      }
+    ],
+    "relationships": [
+      {
+        "fromTable": "Fact_Sales",
+        "fromColumn": "CustomerId",
+        "toTable": "Dim_Customer",
+        "toColumn": "CustomerId",
+        "cardinality": "many-to-one",
+        "crossFilteringBehavior": "single",
+        "isActive": true,
+        "relyOnReferentialIntegrity": true
+      }
+    ]
+  }
+}

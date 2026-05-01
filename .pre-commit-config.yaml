@@ -15,6 +15,7 @@ repos:
           - types-pyyaml
           - types-requests
           - typer>=0.12
+          - pbixray>=0.3
         args: [--strict, src/]
         pass_filenames: false
 

@@ -1,0 +1,128 @@
+{
+  "name": "small_bad",
+  "compatibilityLevel": 1500,
+  "model": {
+    "tables": [
+      {
+        "name": "Fact_Sales",
+        "isHidden": false,
+        "columns": [
+          {
+            "name": "OrderId",
+            "dataType": "int64",
+            "isNullable": true,
+            "isKey": true,
+            "isHidden": false
+          },
+          {
+            "name": "CustomerId",
+            "dataType": "int64",
+            "isNullable": false
+          },
+          {
+            "name": "Region",
+            "dataType": "string",
+            "isNullable": true
+          },
+          {
+            "name": "Revenue",
+            "dataType": "decimal",
+            "isNullable": true
+          },
+          {
+            "name": "RevenuePlus10",
+            "dataType": "decimal",
+            "isNullable": true,
+            "type": "calculated",
+            "expression": "Fact_Sales[Revenue] * 1.1"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": ""
+            }
+          }
+        ],
+        "measures": []
+      },
+      {
+        "name": "Dim_Customer",
+        "isHidden": false,
+        "columns": [
+          {
+            "name": "CustomerId",
+            "dataType": "int64",
+            "isKey": true
+          },
+          {
+            "name": "Name",
+            "dataType": "string"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": ""
+            }
+          }
+        ],
+        "measures": []
+      },
+      {
+        "name": "Dim_Region",
+        "isHidden": false,
+        "columns": [
+          {
+            "name": "RegionId",
+            "dataType": "string",
+            "isKey": true
+          },
+          {
+            "name": "RegionName",
+            "dataType": "string"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": ""
+            }
+          }
+        ],
+        "measures": []
+      }
+    ],
+    "relationships": [
+      {
+        "fromTable": "Fact_Sales",
+        "fromColumn": "CustomerId",
+        "toTable": "Dim_Customer",
+        "toColumn": "CustomerId",
+        "cardinality": "many-to-one",
+        "crossFilteringBehavior": "single",
+        "isActive": true,
+        "relyOnReferentialIntegrity": false
+      },
+      {
+        "fromTable": "Fact_Sales",
+        "fromColumn": "Region",
+        "toTable": "Dim_Region",
+        "toColumn": "RegionId",
+        "cardinality": "many-to-many",
+        "crossFilteringBehavior": "both",
+        "isActive": true,
+        "relyOnReferentialIntegrity": false
+      }
+    ]
+  }
+}
