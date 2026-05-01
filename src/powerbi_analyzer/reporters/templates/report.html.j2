@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Power BI on Databricks Audit — {{ target }}</title>
+{% if embed_fonts %}
+<style>@font-face { font-family: 'DM Sans'; src: url('data:font/woff2;base64,{{ font_b64 }}') format('woff2'); }</style>
+{% else %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+{% endif %}
+<style>{{ css }}</style>
+</head>
+<body>
+<div class="container">
+  <h1>Power BI on Databricks Audit — {{ target }}</h1>
+  <div class="meta">Generated {{ generated_at }} by pba {{ version }}. Modes run: {{ modes }}.</div>
+
+  <div class="summary-card">
+    <div class="scores">
+    {% for ph_label, score in scores %}
+      <div class="score">
+        <strong>{{ ph_label }}</strong>: {{ score.score }}/100
+        <div class="bar"><span style="width:{{ score.score }}%"></span></div>
+        <div class="meta">{{ score.pass_ }} pass · {{ score.warn }} warn · {{ score.error }} error · {{ score.na }} n/a</div>
+      </div>
+    {% endfor %}
+      <div class="score"><strong>Overall</strong>: {{ overall }}/100</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    {% for f in ["error", "warn", "info", "pass"] %}
+      <span class="chip" data-filter="{{ f }}" aria-pressed="false">{{ f }}</span>
+    {% endfor %}
+    {% for ph_label, _ in scores %}
+      <span class="chip" data-filter="{{ ph_label|lower|replace(' ', '_') }}" aria-pressed="false">{{ ph_label }}</span>
+    {% endfor %}
+  </div>
+
+  {% for ph_label, items in by_phase %}
+    <h2>{{ ph_label }}</h2>
+    {% for f in items %}
+      <div class="finding {{ f.severity }}" data-severity="{{ f.severity }}" data-phase="{{ ph_label|lower|replace(' ', '_') }}">
+        <h3>[{{ f.rule_id }}] {{ f.rule_name }} <span class="meta">({{ f.severity }})</span></h3>
+        <div class="meta">Target: {{ f.target }}</div>
+        <p>{{ f.summary }}</p>
+        {% if f.why %}<p><em>{{ f.why }}</em></p>{% endif %}
+        {% if f.fix %}<p><strong>Fix:</strong> {{ f.fix }}
+          <button class="copy" data-text="{{ f.fix }}">copy</button></p>{% endif %}
+        {% if f.docs_url %}<p><a href="{{ f.docs_url }}">{{ f.docs_url }}</a></p>{% endif %}
+        {% if f.evidence %}
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            {% for k, v in f.evidence.items() %}
+              <tr><th>{{ k }}</th><td><code>{{ v }}</code></td></tr>
+            {% endfor %}
+          </tbody></table>
+        </details>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+<script>{{ js }}</script>
+</body>
+</html>
