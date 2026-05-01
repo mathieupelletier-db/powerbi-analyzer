@@ -103,7 +103,7 @@ class MarkdownReporter:
         if f.docs_url:
             body.append(f"**Reference:** [{f.docs_url}]({f.docs_url})")
         if f.evidence:
-            ev = json.dumps(f.evidence, indent=2, default=str)
+            ev = json.dumps(f.evidence, indent=2, default=str, ensure_ascii=False)
             body.append(
                 dedent(f"""\
                 <details><summary>Evidence</summary>
