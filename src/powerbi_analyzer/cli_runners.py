@@ -17,7 +17,7 @@ from powerbi_analyzer.domain.catalog import CatalogState
 from powerbi_analyzer.domain.finding import Finding, Severity, Status
 from powerbi_analyzer.domain.semantic_model import SemanticModel
 from powerbi_analyzer.domain.warehouse import WarehouseState
-from powerbi_analyzer.engine import Engine
+from powerbi_analyzer.engine import Engine, RunResult
 from powerbi_analyzer.reporters.markdown import MarkdownReporter
 from powerbi_analyzer.rules import RuleRegistry
 
@@ -37,6 +37,39 @@ def _exit_code(findings: Sequence[Finding], fail_on: str) -> int:
     threshold = {"warn": (Severity.ERROR, Severity.WARN), "error": (Severity.ERROR,)}[fail_on]
     has = any(f.status is Status.FAIL and f.severity in threshold for f in findings)
     return 2 if has else 0
+
+
+def _write_report(
+    result: RunResult,
+    *,
+    target: Path,
+    formats: str,
+    target_description: str,
+    modes_run: list[str],
+) -> None:
+    """Render and write a report, choosing renderer by file extension or formats flag."""
+    from powerbi_analyzer.reporters.html import HtmlReporter
+
+    use_html = target.suffix.lower() == ".html" or "html" in formats.lower()
+    now = datetime.now(UTC)
+    if use_html:
+        content = HtmlReporter().render(
+            result,
+            target_description=target_description,
+            modes_run=modes_run,
+            generated_at=now,
+            version=__version__,
+        )
+    else:
+        content = MarkdownReporter().render(
+            result,
+            target_description=target_description,
+            modes_run=modes_run,
+            generated_at=now,
+            version=__version__,
+        )
+    target.write_text(content)
+    print(f"wrote {target}")
 
 
 def run_pbix(
@@ -68,16 +101,14 @@ def run_pbix(
         # No paths provided — nothing to report
         return 0
 
-    md = MarkdownReporter().render(
+    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
+    _write_report(
         result,
+        target=target,
+        formats=formats,
         target_description=", ".join(p.name for p in paths),
         modes_run=["pbix"],
-        generated_at=datetime.now(UTC),
-        version=__version__,
     )
-    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
-    target.write_text(md)
-    print(f"wrote {target}")
     return _exit_code(all_findings, fail_on)
 
 

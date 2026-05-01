@@ -1,22 +1,90 @@
 # powerbi-analyzer (`pba`)
 
-CLI that audits Power BI on Databricks setups against the [Databricks Power BI Best Practices Cheat Sheet](2025-04-power-bi-on-databricks-best-practices-cheat-sheet%20%281%29.pdf).
+Audit a Power BI on Databricks setup against the Databricks
+[Power BI on Databricks Best Practices Cheat Sheet](2025-04-power-bi-on-databricks-best-practices-cheat-sheet%20%281%29.pdf).
+Produces a single Markdown or HTML report you can share with your team.
 
-## Install (dev)
+## What it checks
+
+42 rules across four phases:
+
+| Phase | Modes | Rules |
+|---|---|---|
+| Data Preparation | Databricks side | DP-001 … DP-010 |
+| SQL Serving | Databricks side | SS-001 … SS-010 |
+| Power BI Integration | `.pbix`, workspace, Databricks | IN-001 … IN-011 |
+| Power BI Report Design | `.pbix`, workspace | RD-001 … RD-011 |
+
+See `docs/superpowers/specs/2026-05-01-powerbi-analyzer-design.md` for the full rule catalog.
+
+## Install
 
 ```bash
-uv venv
+uv tool install git+https://github.com/<owner>/powerbi-analyzer
+# or for development
+git clone … && cd powerbi-analyzer
+uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 pre-commit install
 ```
 
 ## Usage
 
+### Static `.pbix` analysis (no credentials)
+
 ```bash
-pba pbix path/to/report.pbix
-pba databricks --profile DEFAULT --catalog main.gold --warehouse-id <id>
-pba workspace --workspace-id <guid>
-pba scan --config pba.yaml
+pba pbix path/to/report.pbix --out reports/audit.md
+pba pbix path/to/report.pbip --out reports/audit.html
 ```
 
-See `docs/superpowers/specs/2026-05-01-powerbi-analyzer-design.md` for design.
+### Live Power BI workspace
+
+```bash
+pba workspace --workspace-id <guid> --tenant-id <guid> --auth device_code
+# follow the device-code prompt in your browser
+```
+
+Required Power BI scopes: `Dataset.Read.All`, `Workspace.Read.All`, `Tenant.Read.All`.
+
+For unattended use, set `PBI_TENANT_ID`, `PBI_CLIENT_ID`, `PBI_CLIENT_SECRET` and pass `--auth service_principal`.
+
+### Databricks-side audit
+
+```bash
+pba databricks --profile DEFAULT --warehouse-id <id> --catalog main.gold
+```
+
+Required permissions:
+
+- `USE CATALOG` on each scanned catalog
+- `SELECT` on `system.query.history`, `system.compute.warehouse_events`, `system.information_schema.*`
+- `CAN_USE` on the warehouse
+
+### Scan everything from a config file
+
+```bash
+pba init                 # writes pba.yaml
+$EDITOR pba.yaml         # fill in credentials and targets
+pba scan                 # produces a single combined report
+```
+
+## Sample output
+
+See [`examples/sample-report.md`](examples/sample-report.md) and
+[`examples/sample-report.html`](examples/sample-report.html) for what the report looks like
+on the deliberately-bad fixture.
+
+## Development
+
+```bash
+pytest                   # run all tests
+mypy src/                # type-check
+ruff check src tests     # lint
+ruff format src tests    # format
+PBA_UPDATE_GOLDENS=1 pytest tests/e2e/  # refresh golden reports
+```
+
+## Reporting issues
+
+Please attach the contents of `~/.cache/pba/<run_id>/` (collector outputs, redacted) when filing
+a bug — the cache is sanitized of secrets, GUIDs, and connection strings.

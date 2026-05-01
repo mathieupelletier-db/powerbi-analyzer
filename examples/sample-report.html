@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Power BI on Databricks Audit — small_bad.pbip</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+
+<style>:root {
+  --bg: #fff; --fg: #1b1f23; --muted: #5e6770;
+  --pass: #1e7e34; --warn: #b07900; --error: #c0392b; --info: #2c64a3;
+  --card: #f6f7f9; --border: #e1e4e8;
+  --brand: #ff3621; /* Databricks orange */
+}
+* { box-sizing: border-box; }
+body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       margin: 0; background: var(--bg); color: var(--fg); }
+.container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+h1 { color: var(--brand); margin-top: 0; }
+.summary-card { background: var(--card); border: 1px solid var(--border);
+                border-radius: 8px; padding: 16px; margin: 16px 0; position: sticky; top: 0; }
+.scores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.score { padding: 8px 0; }
+.bar { background: var(--border); border-radius: 4px; height: 8px; margin-top: 4px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--brand); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.chip { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+        font-size: 12px; user-select: none; }
+.chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+.finding { border-left: 4px solid var(--border); padding: 8px 12px; margin: 8px 0;
+           background: var(--card); border-radius: 0 4px 4px 0; }
+.finding.error { border-left-color: var(--error); }
+.finding.warn { border-left-color: var(--warn); }
+.finding.info { border-left-color: var(--info); }
+.finding.pass { border-left-color: var(--pass); }
+.finding h3 { margin: 4px 0; font-size: 16px; }
+.finding .meta { color: var(--muted); font-size: 12px; }
+details summary { cursor: pointer; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.copy { font-size: 11px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px;
+        background: #fff; cursor: pointer; }
+@media print {
+  .filters, .copy { display: none !important; }
+  details[open] { display: block; }
+  details > summary { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Power BI on Databricks Audit — small_bad.pbip</h1>
+  <div class="meta">Generated 2026-05-01 16:55 UTC by pba 0.1.0. Modes run: pbix.</div>
+
+  <div class="summary-card">
+    <div class="scores">
+    
+      <div class="score">
+        <strong>Power BI Integration</strong>: 33/100
+        <div class="bar"><span style="width:33%"></span></div>
+        <div class="meta">2 pass · 1 warn · 0 error · 6 n/a</div>
+      </div>
+    
+      <div class="score">
+        <strong>Power BI Report Design</strong>: 54/100
+        <div class="bar"><span style="width:54%"></span></div>
+        <div class="meta">7 pass · 3 warn · 0 error · 1 n/a</div>
+      </div>
+    
+      <div class="score"><strong>Overall</strong>: 44/100</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    
+      <span class="chip" data-filter="error" aria-pressed="false">error</span>
+    
+      <span class="chip" data-filter="warn" aria-pressed="false">warn</span>
+    
+      <span class="chip" data-filter="info" aria-pressed="false">info</span>
+    
+      <span class="chip" data-filter="pass" aria-pressed="false">pass</span>
+    
+    
+      <span class="chip" data-filter="power_bi_integration" aria-pressed="false">Power BI Integration</span>
+    
+      <span class="chip" data-filter="power_bi_report_design" aria-pressed="false">Power BI Report Design</span>
+    
+  </div>
+
+  
+    <h2>Data Preparation</h2>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-001] Adopt medallion architecture (serve Gold) <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/lakehouse/medallion.html">https://docs.databricks.com/lakehouse/medallion.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-002] Use star schema <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/guidance/star-schema">https://learn.microsoft.com/power-bi/guidance/star-schema</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-003] Use SQL views or persisted tables for repeated aggregations <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/user/queries/index.html">https://docs.databricks.com/sql/user/queries/index.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-004] Declare PK/FK with RELY <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/tables/constraints.html">https://docs.databricks.com/tables/constraints.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-005] Avoid wide and high-cardinality types <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/tables/index.html">https://docs.databricks.com/tables/index.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-006] Use auto-generated (computed) columns <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/language-manual/sql-ref-syntax-ddl-create-table-using.html">https://docs.databricks.com/sql/language-manual/sql-ref-syntax-ddl-create-table-using.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-007] Use Liquid Clustering or Z-order <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/delta/clustering.html">https://docs.databricks.com/delta/clustering.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-008] Predictive Optimization or recent OPTIMIZE/VACUUM <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/optimizations/predictive-optimization.html">https://docs.databricks.com/optimizations/predictive-optimization.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-009] Compute column statistics <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/language-manual/sql-ref-syntax-aux-analyze-table.html">https://docs.databricks.com/sql/language-manual/sql-ref-syntax-aux-analyze-table.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="data_preparation">
+        <h3>[DP-010] Evaluate materialized views <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/user/materialized-views.html">https://docs.databricks.com/sql/user/materialized-views.html</a></p>
+        
+      </div>
+    
+  
+    <h2>SQL Serving</h2>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-001] Use SQL warehouse, not all-purpose cluster <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html">https://docs.databricks.com/sql/admin/sql-endpoints.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-002] Use Serverless SQL warehouse <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/serverless.html">https://docs.databricks.com/sql/admin/serverless.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-003] Enable SQL warehouse Auto stop <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#auto-stop">https://docs.databricks.com/sql/admin/sql-endpoints.html#auto-stop</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-004] Right-size warehouse for dataset <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes">https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-005] Configure SQL warehouse scaling <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling">https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-006] Increase min clusters for concurrent traffic <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling">https://docs.databricks.com/sql/admin/sql-endpoints.html#scaling</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-007] Same warehouse for same dataset <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#cache">https://docs.databricks.com/sql/admin/sql-endpoints.html#cache</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-008] Separate warehouses for different workloads <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html">https://docs.databricks.com/sql/admin/sql-endpoints.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-009] Reasonable starting warehouse size <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes">https://docs.databricks.com/sql/admin/sql-endpoints.html#sizes</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="sql_serving">
+        <h3>[SS-010] Monitor via system tables <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/admin/system-tables/index.html">https://docs.databricks.com/admin/system-tables/index.html</a></p>
+        
+      </div>
+    
+  
+    <h2>Power BI Integration</h2>
+    
+      <div class="finding warn" data-severity="warn" data-phase="power_bi_integration">
+        <h3>[IN-002] Use DirectQuery on facts and Dual on dimensions <span class="meta">(warn)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>1 fact(s) in Import, 2 dim(s) not in Dual.</p>
+        <p><em>Import-mode facts can outgrow capacity; Dual dims allow dim filters to fold into either path.</em></p>
+        <p><strong>Fix:</strong> Set fact tables to DirectQuery, small dimensions to Dual.
+          <button class="copy" data-text="Set fact tables to DirectQuery, small dimensions to Dual.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode">https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>facts_in_import</th><td><code>['Fact_Sales']</code></td></tr>
+            
+              <tr><th>dims_not_dual</th><td><code>['Dim_Customer', 'Dim_Region']</code></td></tr>
+            
+              <tr><th>heuristic</th><td><code>best-effort — review and ignore if intentional</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding info" data-severity="info" data-phase="power_bi_integration">
+        <h3>[IN-003] Consider composite models <span class="meta">(info)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>All 3 tables use the same storage mode.</p>
+        <p><em>A composite model lets you mix Import (small dims) and DirectQuery (large facts) for both freshness and speed.</em></p>
+        <p><strong>Fix:</strong> Convert dimensions to Dual or facts to DirectQuery as appropriate.
+          <button class="copy" data-text="Convert dimensions to Dual or facts to DirectQuery as appropriate.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-composite-models">https://learn.microsoft.com/power-bi/transform-model/desktop-composite-models</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>storage_mode</th><td><code>import</code></td></tr>
+            
+              <tr><th>table_count</th><td><code>3</code></td></tr>
+            
+              <tr><th>heuristic</th><td><code>best-effort — review and ignore if intentional</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding info" data-severity="info" data-phase="power_bi_integration">
+        <h3>[IN-008] Use parameters for environment switching <span class="meta">(info)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No parameter found for switching connection endpoints.</p>
+        <p><em>Hardcoded warehouse URLs make dev → prod migration painful.</em></p>
+        <p><strong>Fix:</strong> Define an M parameter (e.g., 'warehouse_endpoint') and reference it in the connection string.
+          <button class="copy" data-text="Define an M parameter (e.g., 'warehouse_endpoint') and reference it in the connection string.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/connect-data/desktop-dynamic-m-query-parameters">https://learn.microsoft.com/power-bi/connect-data/desktop-dynamic-m-query-parameters</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>parameters</th><td><code>[]</code></td></tr>
+            
+              <tr><th>heuristic</th><td><code>best-effort — review and ignore if intentional</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_integration">
+        <h3>[IN-004] Consider hybrid tables for large facts <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No large pure-DirectQuery facts found.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/connect-data/desktop-incremental-refresh#hybrid-tables">https://learn.microsoft.com/power-bi/connect-data/desktop-incremental-refresh#hybrid-tables</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_integration">
+        <h3>[IN-005] Use incremental refresh for large Import tables <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>All large Import tables use incremental refresh.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/connect-data/incremental-refresh-overview">https://learn.microsoft.com/power-bi/connect-data/incremental-refresh-overview</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-001] Same region for Power BI and Databricks <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace', 'databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/admin/service-admin-where-is-my-tenant-located">https://learn.microsoft.com/power-bi/admin/service-admin-where-is-my-tenant-located</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-006] Tune Power BI query parallelization <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode">https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-007] Enable SSO between Power BI and Databricks <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/integrations/configure-power-bi-sso.html">https://docs.databricks.com/integrations/configure-power-bi-sso.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-009] Use clustered gateways <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/data-integration/gateway/service-gateway-high-availability-clusters">https://learn.microsoft.com/data-integration/gateway/service-gateway-high-availability-clusters</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-010] Use Publish to Power BI Service from Databricks <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace', 'databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/integrations/configure-power-bi-online-service.html">https://docs.databricks.com/integrations/configure-power-bi-online-service.html</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_integration">
+        <h3>[IN-011] Use Automatic Publishing from Unity Catalog <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: requires modes ['workspace', 'databricks'] but active modes are ['pbix']</p>
+        
+        
+        <p><a href="https://docs.databricks.com/integrations/configure-power-bi-online-service.html">https://docs.databricks.com/integrations/configure-power-bi-online-service.html</a></p>
+        
+      </div>
+    
+  
+    <h2>Power BI Report Design</h2>
+    
+      <div class="finding warn" data-severity="warn" data-phase="power_bi_report_design">
+        <h3>[RD-005] Avoid many-to-many relationships <span class="meta">(warn)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>1 many-to-many relationship(s) detected.</p>
+        <p><em>Many-to-many relationships add bridge-table complexity and can degrade query plans.</em></p>
+        <p><strong>Fix:</strong> Replace with a bridge dimension or denormalize at the gold layer.
+          <button class="copy" data-text="Replace with a bridge dimension or denormalize at the gold layer.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-many-to-many-relationships">https://learn.microsoft.com/power-bi/transform-model/desktop-many-to-many-relationships</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>relationships</th><td><code>['Fact_Sales↔Dim_Region']</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding warn" data-severity="warn" data-phase="power_bi_report_design">
+        <h3>[RD-006] Use Assume Referential Integrity where valid <span class="meta">(warn)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>1 relationship(s) eligible for Assume Referential Integrity.</p>
+        <p><em>ARI lets Power BI emit INNER JOIN instead of LEFT OUTER, simplifying generated SQL.</em></p>
+        <p><strong>Fix:</strong> If the foreign key is enforced upstream, enable Assume Referential Integrity on the relationship.
+          <button class="copy" data-text="If the foreign key is enforced upstream, enable Assume Referential Integrity on the relationship.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-relationships-troubleshoot">https://learn.microsoft.com/power-bi/transform-model/desktop-relationships-troubleshoot</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>relationships</th><td><code>['Fact_Sales[CustomerId] → Dim_Customer[CustomerId]']</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding warn" data-severity="warn" data-phase="power_bi_report_design">
+        <h3>[RD-011] Avoid DAX calculated columns and calculated tables <span class="meta">(warn)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>1 calculated column(s); 0 calculated table(s).</p>
+        <p><em>Calculated columns / tables increase semantic-model size and refresh time. Doing the same work in Gold Delta is faster and shareable.</em></p>
+        <p><strong>Fix:</strong> Move calculated columns into the Gold view (or a derived column at ETL time). Replace calculated tables with persisted tables.
+          <button class="copy" data-text="Move calculated columns into the Gold view (or a derived column at ETL time). Replace calculated tables with persisted tables.">copy</button></p>
+        <p><a href="https://learn.microsoft.com/power-bi/guidance/import-modeling-data-reduction">https://learn.microsoft.com/power-bi/guidance/import-modeling-data-reduction</a></p>
+        
+        <details><summary>Evidence</summary>
+          <table><tbody>
+            
+              <tr><th>calculated_columns</th><td><code>['Fact_Sales[RevenuePlus10]']</code></td></tr>
+            
+              <tr><th>calculated_tables</th><td><code>[]</code></td></tr>
+            
+          </tbody></table>
+        </details>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-001] Limit visuals per page <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>Each page has ≤ 12 visuals.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/guidance/power-bi-optimization">https://learn.microsoft.com/power-bi/guidance/power-bi-optimization</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-002] Limit rows and columns surfaced in DirectQuery <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No DirectQuery table has > 50 columns.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/guidance/power-bi-optimization">https://learn.microsoft.com/power-bi/guidance/power-bi-optimization</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-003] Use user-defined aggregations on large fact tables <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No large unsupported fact, or aggregations already mapped.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/aggregations-advanced">https://learn.microsoft.com/power-bi/transform-model/aggregations-advanced</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-004] Enable automatic aggregations for DirectQuery <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No DirectQuery tables; rule N/A.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/aggregations-auto">https://learn.microsoft.com/power-bi/transform-model/aggregations-auto</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-008] Move transformations left (prefer SQL views) <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No M transformations matching the move-left heuristic.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/guidance/power-query-folding">https://learn.microsoft.com/power-bi/guidance/power-query-folding</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-009] Use efficient DAX patterns <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No DAX smells matched.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/dax/best-practices/dax-aggregators">https://learn.microsoft.com/dax/best-practices/dax-aggregators</a></p>
+        
+      </div>
+    
+      <div class="finding pass" data-severity="pass" data-phase="power_bi_report_design">
+        <h3>[RD-010] Add Apply All Slicers when many slicers <span class="meta">(pass)</span></h3>
+        <div class="meta">Target: small_bad</div>
+        <p>No slicer-heavy pages, or Apply All Slicers enabled.</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/create-reports/desktop-query-reduction">https://learn.microsoft.com/power-bi/create-reports/desktop-query-reduction</a></p>
+        
+      </div>
+    
+      <div class="finding n/a" data-severity="n/a" data-phase="power_bi_report_design">
+        <h3>[RD-007] Configure 'Is nullable' to match source <span class="meta">(n/a)</span></h3>
+        <div class="meta">Target: -</div>
+        <p>Not applicable: required input CatalogState not collected</p>
+        
+        
+        <p><a href="https://learn.microsoft.com/power-bi/transform-model/desktop-tutorial-create-calculated-columns">https://learn.microsoft.com/power-bi/transform-model/desktop-tutorial-create-calculated-columns</a></p>
+        
+      </div>
+    
+  
+</div>
+<script>(function () {
+  const chips = document.querySelectorAll('.chip[data-filter]');
+  const findings = document.querySelectorAll('.finding');
+  const active = new Set();
+  function apply() {
+    findings.forEach(f => {
+      const sev = f.dataset.severity;
+      const phase = f.dataset.phase;
+      const ok = active.size === 0 || active.has(sev) || active.has(phase);
+      f.style.display = ok ? '' : 'none';
+    });
+  }
+  chips.forEach(c => c.addEventListener('click', () => {
+    const v = c.dataset.filter;
+    if (active.has(v)) { active.delete(v); c.setAttribute('aria-pressed', 'false'); }
+    else { active.add(v); c.setAttribute('aria-pressed', 'true'); }
+    apply();
+  }));
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(b.dataset.text);
+    b.textContent = 'copied';
+    setTimeout(() => (b.textContent = 'copy'), 1200);
+  }));
+})();
+</script>
+</body>
+</html>
