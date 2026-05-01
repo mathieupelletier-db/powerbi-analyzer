@@ -6,6 +6,8 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+import typer
+
 from powerbi_analyzer import __version__
 from powerbi_analyzer.cache import RunCache
 from powerbi_analyzer.collectors._sql import SqlExecutor
@@ -79,8 +81,57 @@ def run_pbix(
     return _exit_code(all_findings, fail_on)
 
 
-def run_workspace(**_: object) -> int:
-    raise NotImplementedError("pba workspace wiring lands in a later task")
+def run_workspace(
+    *,
+    workspace_id: str,
+    tenant_id: str | None,
+    dataset_ids: list[str],
+    auth: str,
+    out: Path | None,
+    formats: str,
+    ignore: set[str],
+    fail_on: str,
+) -> int:
+    from powerbi_analyzer.auth_msal import get_token
+    from powerbi_analyzer.collectors.workspace import (
+        HttpPowerBiRestClient,
+        HttpXmlaRestClient,
+        WorkspaceCollector,
+    )
+    from powerbi_analyzer.domain.semantic_model import WorkspaceConfig
+
+    if not tenant_id:
+        raise typer.BadParameter("--tenant-id is required for workspace mode")
+    token = get_token(tenant_id=tenant_id, auth=auth)
+    rest = HttpPowerBiRestClient(token)
+    xmla = HttpXmlaRestClient(token)
+    sm, cfg = WorkspaceCollector(
+        workspace_id=workspace_id,
+        dataset_ids=dataset_ids or None,
+        rest=rest,
+        xmla=xmla,
+    ).collect()
+    cache = RunCache()
+    cache.write("workspace_model", sm.model_dump(mode="json"))
+    cache.write("workspace_config", cfg.model_dump(mode="json"))
+    registry = RuleRegistry.discover()
+    engine = Engine(registry)
+    result = engine.run(
+        active_modes={"workspace"},
+        context={SemanticModel: sm, WorkspaceConfig: cfg},
+        ignore=ignore,
+    )
+    md = MarkdownReporter().render(
+        result,
+        target_description=f"workspace {workspace_id}",
+        modes_run=["workspace"],
+        generated_at=datetime.now(UTC),
+        version=__version__,
+    )
+    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
+    target.write_text(md)
+    print(f"wrote {target}")
+    return _exit_code(result.findings, fail_on)
 
 
 def run_databricks(
