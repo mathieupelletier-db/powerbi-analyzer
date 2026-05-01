@@ -1,0 +1,4 @@
+[
+  {"event_time": "2026-04-29T10:01:00Z", "warehouse_id": "wh-test-001",
+   "event_type": "SCALED_UP", "cluster_count": 2}
+]

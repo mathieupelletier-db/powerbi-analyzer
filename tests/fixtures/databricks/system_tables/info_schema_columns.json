@@ -1,0 +1,6 @@
+[
+  {"table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "column_name": "id", "full_data_type": "bigint", "is_nullable": "NO"},
+  {"table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "column_name": "customer_note", "full_data_type": "string", "is_nullable": "YES"}
+]

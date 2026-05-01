@@ -1,0 +1,32 @@
+[
+  {
+    "statement_id": "q1",
+    "warehouse_id": "wh-test-001",
+    "compute": {"warehouse_id": "wh-test-001", "cluster_id": null},
+    "client_application": "Power BI Desktop",
+    "statement_type": "SELECT",
+    "start_time": "2026-04-29T10:00:00Z",
+    "end_time": "2026-04-29T10:00:08Z",
+    "total_duration_ms": 8000,
+    "waiting_for_compute_duration_ms": 4000,
+    "compute_used_mb": 256,
+    "produced_rows": 1000,
+    "spilled_local_bytes": 0,
+    "executed_as_user_name": "bi-svc",
+    "read_partitions": []
+  },
+  {
+    "statement_id": "q2",
+    "warehouse_id": null,
+    "compute": {"warehouse_id": null, "cluster_id": "cluster-XYZ"},
+    "client_application": "Power BI Service",
+    "statement_type": "SELECT",
+    "start_time": "2026-04-29T10:05:00Z",
+    "end_time": "2026-04-29T10:05:01Z",
+    "total_duration_ms": 1000,
+    "waiting_for_compute_duration_ms": 0,
+    "compute_used_mb": 64,
+    "produced_rows": 10,
+    "spilled_local_bytes": 0
+  }
+]

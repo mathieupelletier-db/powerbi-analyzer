@@ -1,0 +1,5 @@
+[
+  {"table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "constraint_type": "PRIMARY KEY", "constraint_name": "pk_fact_sales",
+   "rely": true, "key_columns": ["id"]}
+]

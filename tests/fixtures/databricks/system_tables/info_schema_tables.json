@@ -1,0 +1,6 @@
+[
+  {"table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "table_type": "MANAGED", "is_insertable_into": "YES"},
+  {"table_catalog": "main", "table_schema": "staging", "table_name": "orders",
+   "table_type": "MANAGED", "is_insertable_into": "YES"}
+]

@@ -1,0 +1,22 @@
+{
+  "main.gold.fact_sales": {
+    "clustering_columns": ["customer_id"],
+    "clustering_kind": "liquid",
+    "last_optimize_at": "2026-04-25T03:00:00Z",
+    "last_vacuum_at": "2026-04-26T03:00:00Z",
+    "predictive_optimization": true,
+    "size_bytes": 50000000000,
+    "is_materialized_view": false,
+    "has_column_stats": true
+  },
+  "main.staging.orders": {
+    "clustering_columns": [],
+    "clustering_kind": "none",
+    "last_optimize_at": null,
+    "last_vacuum_at": null,
+    "predictive_optimization": false,
+    "size_bytes": 1000000000,
+    "is_materialized_view": false,
+    "has_column_stats": false
+  }
+}
