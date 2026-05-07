@@ -19,7 +19,7 @@ dependencies = [
     "msal>=1.28",
     "requests>=2.32",
     "databricks-sdk>=0.30",
-    "databricks-sql-connector>=3.3",
+    "databricks-sql-connector[pyarrow]>=3.3",
     "pbixray>=0.3",
 ]
 
