@@ -110,3 +110,16 @@ PBA_UPDATE_GOLDENS=1 pytest tests/e2e/  # refresh golden reports
 
 Please attach the contents of `~/.cache/pba/<run_id>/` (collector outputs, redacted) when filing
 a bug — the cache is sanitized of secrets, GUIDs, and connection strings.
+
+## License
+
+This project is licensed under the Databricks DB License — see [LICENSE.md](LICENSE.md).
+
+## Support Disclaimer
+
+The content provided here is for **reference and educational purposes only**.
+It is not officially supported by Databricks under any Service Level Agreements (SLAs).
+All materials are provided **AS IS**, without any guarantees or warranties, and are not intended for production use without proper review and testing.
+
+If you encounter issues while using this content, please open a GitHub Issue in this repository.
+Issues will be reviewed as time permits, but there are **no formal SLAs** for support.
