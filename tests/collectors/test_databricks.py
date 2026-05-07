@@ -117,3 +117,17 @@ def test_as_list_handles_list_string_none() -> None:
     assert _as_list('["x", "y"]') == ["x", "y"]
     assert _as_list(None) == []
     assert _as_list("nope") == []
+
+
+def test_history_row_defaults_statement_type_when_null() -> None:
+    """system.query.history can return statement_type as SQL NULL (None);
+    we must coerce to the default rather than letting pydantic reject it."""
+    row = {
+        "statement_id": "q1",
+        "compute": {"warehouse_id": "wh-1"},
+        "client_application": "Power BI Desktop",
+        "statement_type": None,
+        "start_time": "2026-05-01T00:00:00Z",
+    }
+    entry = DatabricksCollector._history_row(row)
+    assert entry.statement_type == "SELECT"

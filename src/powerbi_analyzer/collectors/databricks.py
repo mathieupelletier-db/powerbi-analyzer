@@ -171,7 +171,7 @@ class DatabricksCollector(Collector):
             warehouse_id=compute.get("warehouse_id") or r.get("warehouse_id"),
             all_purpose_cluster_id=compute.get("cluster_id"),
             client_application=r.get("client_application"),
-            statement_type=r.get("statement_type", "SELECT"),
+            statement_type=r.get("statement_type") or "SELECT",
             started_at=_parse_dt(r["start_time"]) or datetime.now(UTC),
             ended_at=_parse_dt(r.get("end_time")),
             execution_time_ms=int(r.get("total_duration_ms") or 0),
