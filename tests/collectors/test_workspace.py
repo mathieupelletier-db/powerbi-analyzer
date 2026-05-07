@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from powerbi_analyzer.collectors.workspace import (
+    HttpXmlaRestClient,
     PowerBiRestClient,
     WorkspaceCollector,
     XmlaRestClient,
+    _raise_with_body,
 )
 
 
@@ -282,6 +286,157 @@ def test_collect_storage_mode_directquery() -> None:
     from powerbi_analyzer.domain.semantic_model import StorageMode
 
     assert sm.tables[0].storage_mode == StorageMode.DIRECT_QUERY
+
+
+def _resp(status: int, *, json_body: Any = None, text: str = "", reason: str = "") -> MagicMock:
+    r = MagicMock(spec=requests.Response)
+    r.status_code = status
+    r.ok = 200 <= status < 400
+    r.reason = reason or ("OK" if r.ok else "Bad Request")
+    r.text = text
+    if json_body is None:
+        r.json.side_effect = ValueError("no json")
+    else:
+        r.json.return_value = json_body
+    return r
+
+
+def test_raise_with_body_passthrough_on_success() -> None:
+    _raise_with_body(_resp(200, json_body={}), "GET /x")  # no exception
+
+
+def test_raise_with_body_surfaces_powerbi_error_code() -> None:
+    r = _resp(
+        400,
+        json_body={
+            "error": {
+                "code": "DatasetExecuteQueriesError",
+                "message": "Query execution is not allowed for this dataset.",
+            }
+        },
+    )
+    with pytest.raises(requests.HTTPError) as exc:
+        _raise_with_body(r, "POST executeQueries")
+    msg = str(exc.value)
+    assert "400" in msg
+    assert "POST executeQueries" in msg
+    assert "DatasetExecuteQueriesError" in msg
+    assert "Query execution is not allowed" in msg
+
+
+def _ok_resp(rows: list[dict[str, Any]]) -> MagicMock:
+    r = MagicMock(spec=requests.Response)
+    r.status_code = 200
+    r.ok = True
+    r.reason = "OK"
+    r.json.return_value = {"results": [{"tables": [{"rows": rows}]}]}
+    return r
+
+
+def _fabric_default_400() -> MagicMock:
+    r = MagicMock(spec=requests.Response)
+    r.status_code = 400
+    r.ok = False
+    r.reason = "Bad Request"
+    r.text = ""
+    r.json.return_value = {"error": {"code": "DatasetExecuteQueriesError", "message": ""}}
+    return r
+
+
+def test_xmla_strips_bracketed_keys() -> None:
+    """Power BI returns column names wrapped in brackets — unwrap them."""
+    client = HttpXmlaRestClient(token="t")
+    with patch(
+        "powerbi_analyzer.collectors.workspace.requests.post",
+        return_value=_ok_resp([{"[Name]": "Fact", "[StorageMode]": "Import"}]),
+    ):
+        rows = client.info_tables("ws", "ds")
+    assert rows == [{"Name": "Fact", "StorageMode": "Import"}]
+
+
+def test_xmla_falls_back_to_info_view_on_dataset_error() -> None:
+    """Fabric default semantic models reject INFO.TABLES() — retry with INFO.VIEW.TABLES()."""
+    client = HttpXmlaRestClient(token="t")
+    classic_fail = _fabric_default_400()
+    view_ok = _ok_resp([{"[Name]": "Fact", "[StorageMode]": "Import", "[IsHidden]": False}])
+
+    with patch(
+        "powerbi_analyzer.collectors.workspace.requests.post",
+        side_effect=[classic_fail, view_ok],
+    ) as post:
+        rows = client.info_tables("ws", "ds")
+
+    assert post.call_count == 2
+    classic_query = post.call_args_list[0].kwargs["json"]["queries"][0]["query"]
+    view_query = post.call_args_list[1].kwargs["json"]["queries"][0]["query"]
+    assert "INFO.TABLES()" in classic_query
+    assert "INFO.VIEW.TABLES()" in view_query
+    assert rows[0]["Name"] == "Fact"
+
+
+def test_xmla_view_relationships_normalizes_cardinality_codes() -> None:
+    """INFO.VIEW.RELATIONSHIPS uses string cardinality; bridge to classic int code."""
+    client = HttpXmlaRestClient(token="t")
+    view_row = {
+        "[FromTable]": "flights",
+        "[FromColumn]": "Origin",
+        "[ToTable]": "airports",
+        "[ToColumn]": "IATA",
+        "[FromCardinality]": "Many",
+        "[ToCardinality]": "One",
+        "[CrossFilteringBehavior]": "OneDirection",
+        "[IsActive]": True,
+        "[RelyOnReferentialIntegrity]": True,
+    }
+    with patch(
+        "powerbi_analyzer.collectors.workspace.requests.post",
+        side_effect=[_fabric_default_400(), _ok_resp([view_row])],
+    ):
+        rows = client.info_relationships("ws", "ds")
+
+    assert rows[0]["Cardinality"] == 3  # Many→One = many-to-one
+    assert rows[0]["CrossFilteringBehavior"] == 1  # OneDirection = single
+    assert rows[0]["FromTable"] == "flights"
+
+
+def test_xmla_view_measures_aliases_table_to_tablename() -> None:
+    """INFO.VIEW.MEASURES uses 'Table' but the collector reads 'TableName'."""
+    client = HttpXmlaRestClient(token="t")
+    view_row = {"[Name]": "Total Sales", "[Table]": "Fact", "[DataType]": "Number"}
+    with patch(
+        "powerbi_analyzer.collectors.workspace.requests.post",
+        side_effect=[_fabric_default_400(), _ok_resp([view_row])],
+    ):
+        rows = client.info_measures("ws", "ds")
+    assert rows[0]["TableName"] == "Fact"
+    assert rows[0]["Name"] == "Total Sales"
+
+
+def test_xmla_does_not_fall_back_on_unrelated_400() -> None:
+    """Only DatasetExecuteQueriesError triggers the VIEW fallback — others propagate."""
+    client = HttpXmlaRestClient(token="t")
+    other_400 = MagicMock(spec=requests.Response)
+    other_400.status_code = 400
+    other_400.ok = False
+    other_400.reason = "Bad Request"
+    other_400.text = ""
+    other_400.json.return_value = {"error": {"code": "InvalidRequest", "message": "bad"}}
+
+    with (
+        patch(
+            "powerbi_analyzer.collectors.workspace.requests.post", return_value=other_400
+        ) as post,
+        pytest.raises(requests.HTTPError),
+    ):
+        client.info_tables("ws", "ds")
+    assert post.call_count == 1  # no fallback attempted
+
+
+def test_raise_with_body_falls_back_to_text_when_not_json() -> None:
+    r = _resp(403, text="Forbidden — caller has no Build permission.")
+    with pytest.raises(requests.HTTPError) as exc:
+        _raise_with_body(r, "POST executeQueries")
+    assert "Forbidden" in str(exc.value)
 
 
 def test_collect_composite_model_detection() -> None:

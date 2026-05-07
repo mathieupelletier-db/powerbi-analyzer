@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 
 from powerbi_analyzer.collectors.pbix import PbixCollector
@@ -62,16 +63,18 @@ def _make_mock_ray(
     dax_measures: list[dict],
     dax_columns: list[dict],
     dax_tables: list[dict],
+    schema: list[dict] | None = None,
+    statistics: list[dict] | None = None,
 ) -> MagicMock:
+    """Build a mock that mirrors pbixray 0.5's pandas-DataFrame API."""
     mock = MagicMock()
     mock.tables = tables
-    mock.relationships = relationships
-    mock.dax_measures = dax_measures
-    mock.dax_columns = dax_columns
-    mock.dax_tables = dax_tables
-    mock.statistics = {}
-    # schema() returns an empty list for each table (no column detail)
-    mock.schema.return_value = []
+    mock.relationships = pd.DataFrame(relationships)
+    mock.dax_measures = pd.DataFrame(dax_measures)
+    mock.dax_columns = pd.DataFrame(dax_columns)
+    mock.dax_tables = pd.DataFrame(dax_tables)
+    mock.schema = pd.DataFrame(schema or [])
+    mock.statistics = pd.DataFrame(statistics or [])
     return mock
 
 
@@ -83,22 +86,21 @@ def test_collect_pbix_good_via_mock(tmp_path: Path) -> None:
         tables=["Fact_Sales", "Dim_Customer"],
         relationships=[
             {
-                "FromTable": "Fact_Sales",
-                "FromColumn": "CustomerId",
-                "ToTable": "Dim_Customer",
-                "ToColumn": "CustomerId",
-                "Cardinality": "ManyToOne",
-                "CrossFilter": "OneDirection",
-                "IsActive": True,
-                "RelyOnReferentialIntegrity": True,
+                "FromTableName": "Fact_Sales",
+                "FromColumnName": "CustomerId",
+                "ToTableName": "Dim_Customer",
+                "ToColumnName": "CustomerId",
+                "Cardinality": "M:1",
+                "CrossFilteringBehavior": "Single",
+                "IsActive": 1,
+                "RelyOnReferentialIntegrity": 1,
             }
         ],
         dax_measures=[
             {
+                "TableName": "Fact_Sales",
                 "Name": "TotalRevenue",
-                "Table": "Fact_Sales",
                 "Expression": "SUM(Fact_Sales[Revenue])",
-                "FormatString": None,
             }
         ],
         dax_columns=[],
@@ -122,23 +124,22 @@ def test_collect_pbix_bad_via_mock(tmp_path: Path) -> None:
         tables=["Fact_Sales"],
         relationships=[
             {
-                "FromTable": "Fact_Sales",
-                "FromColumn": "Region",
-                "ToTable": "Dim_Region",
-                "ToColumn": "RegionId",
-                "Cardinality": "ManyToMany",
-                "CrossFilter": "BothDirections",
-                "IsActive": True,
-                "RelyOnReferentialIntegrity": False,
+                "FromTableName": "Fact_Sales",
+                "FromColumnName": "Region",
+                "ToTableName": "Dim_Region",
+                "ToColumnName": "RegionId",
+                "Cardinality": "M:M",
+                "CrossFilteringBehavior": "Both",
+                "IsActive": 1,
+                "RelyOnReferentialIntegrity": 0,
             }
         ],
         dax_measures=[],
         dax_columns=[
             {
-                "Name": "RevenuePlus10",
-                "Table": "Fact_Sales",
+                "TableName": "Fact_Sales",
+                "ColumnName": "RevenuePlus10",
                 "Expression": "Fact_Sales[Revenue] * 1.1",
-                "DataType": "decimal",
             }
         ],
         dax_tables=[],
@@ -149,3 +150,33 @@ def test_collect_pbix_bad_via_mock(tmp_path: Path) -> None:
 
     assert any(r.cardinality == "many-to-many" for r in sm.relationships)
     assert sm.calculated_columns
+
+
+def test_collect_pbix_skips_unresolved_auto_datetable_relationships(tmp_path: Path) -> None:
+    """pbixray emits relationships with null To* columns for auto-DateTables — skip them."""
+    fake_pbix = tmp_path / "model.pbix"
+    fake_pbix.write_bytes(b"PK")
+
+    mock_ray = _make_mock_ray(
+        tables=["Customer Information"],
+        relationships=[
+            {
+                "FromTableName": "Customer Information",
+                "FromColumnName": "Join Date",
+                "ToTableName": None,
+                "ToColumnName": None,
+                "Cardinality": "M:1",
+                "CrossFilteringBehavior": "Single",
+                "IsActive": 1,
+                "RelyOnReferentialIntegrity": 0,
+            }
+        ],
+        dax_measures=[],
+        dax_columns=[],
+        dax_tables=[],
+    )
+
+    with patch("powerbi_analyzer.collectors.pbix.PBIXRay", return_value=mock_ray):
+        sm: SemanticModel = PbixCollector(path=fake_pbix).collect()
+
+    assert sm.relationships == []

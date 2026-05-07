@@ -22,13 +22,18 @@ from powerbi_analyzer.reporters.markdown import MarkdownReporter
 from powerbi_analyzer.rules import RuleRegistry
 
 
-def _make_databricks_clients(profile: str) -> tuple[SqlExecutor, WorkspaceClient]:
+def _make_databricks_clients(
+    profile: str, warehouse_id: str | None = None
+) -> tuple[SqlExecutor, WorkspaceClient]:
     from powerbi_analyzer.databricks_clients import (
         SdkSqlExecutor,
         SdkWorkspaceClient,
     )
 
-    return SdkSqlExecutor(profile=profile), SdkWorkspaceClient(profile=profile)
+    return (
+        SdkSqlExecutor(profile=profile, warehouse_id=warehouse_id),
+        SdkWorkspaceClient(profile=profile),
+    )
 
 
 def _exit_code(findings: Sequence[Finding], fail_on: str) -> int:
@@ -176,7 +181,7 @@ def run_databricks(
     ignore: set[str],
     fail_on: str,
 ) -> int:
-    sql, ws = _make_databricks_clients(profile)
+    sql, ws = _make_databricks_clients(profile, warehouse_id=warehouse_id)
     collector = DatabricksCollector(
         warehouse_id=warehouse_id,
         catalogs=catalogs,
@@ -240,7 +245,9 @@ def run_scan(config_path: Path) -> int:
             break
 
     if cfg.databricks.warehouse_id:
-        sql, ws = _make_databricks_clients(cfg.databricks.profile)
+        sql, ws = _make_databricks_clients(
+            cfg.databricks.profile, warehouse_id=cfg.databricks.warehouse_id
+        )
         wh, cat = DatabricksCollector(
             warehouse_id=cfg.databricks.warehouse_id,
             catalogs=cfg.databricks.catalogs,

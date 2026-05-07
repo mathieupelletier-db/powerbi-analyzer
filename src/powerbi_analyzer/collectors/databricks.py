@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
@@ -28,6 +29,46 @@ BRONZE_HINTS = {"bronze", "raw", "landing"}
 class WorkspaceClient(Protocol):
     def get_warehouse(self, warehouse_id: str) -> dict[str, Any]: ...
     def workspace_region(self) -> str: ...
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    """Normalize a STRUCT cell from system.query.history to a plain dict.
+
+    Databricks SQL connector returns STRUCT columns as either a dict (Arrow
+    path) or a JSON string (Thrift / cloud-fetch path) depending on connector
+    version and warehouse config. Be tolerant of both.
+    """
+    if value is None:
+        return {}
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+    # Row objects expose .asDict()
+    asdict = getattr(value, "asDict", None)
+    if callable(asdict):
+        result = asdict()
+        return result if isinstance(result, dict) else {}
+    return {}
+
+
+def _as_list(value: Any) -> list[Any]:
+    """Normalize an ARRAY cell — handles list, JSON string, or None."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (ValueError, TypeError):
+            return []
+    return []
 
 
 def _parse_dt(v: Any) -> datetime | None:
@@ -124,7 +165,7 @@ class DatabricksCollector(Collector):
 
     @staticmethod
     def _history_row(r: dict[str, Any]) -> QueryHistoryEntry:
-        compute = r.get("compute") or {}
+        compute = _as_dict(r.get("compute"))
         return QueryHistoryEntry(
             query_id=r["statement_id"],
             warehouse_id=compute.get("warehouse_id") or r.get("warehouse_id"),
@@ -133,19 +174,27 @@ class DatabricksCollector(Collector):
             statement_type=r.get("statement_type", "SELECT"),
             started_at=_parse_dt(r["start_time"]) or datetime.now(UTC),
             ended_at=_parse_dt(r.get("end_time")),
-            execution_time_ms=int(r.get("total_duration_ms", 0)),
-            queue_duration_ms=int(r.get("waiting_for_compute_duration_ms", 0)),
+            execution_time_ms=int(r.get("total_duration_ms") or 0),
+            queue_duration_ms=int(r.get("waiting_for_compute_duration_ms") or 0),
             compute_used_mb=r.get("compute_used_mb"),
             rows_produced=r.get("produced_rows"),
-            spilled_to_disk=int(r.get("spilled_local_bytes", 0)) > 0,
-            referenced_tables=list(r.get("read_partitions") or []),
+            spilled_to_disk=int(r.get("spilled_local_bytes") or 0) > 0,
+            referenced_tables=[str(x) for x in _as_list(r.get("read_partitions"))],
         )
 
     def _catalog_state(self, wh: WarehouseState) -> CatalogState:
-        catalog_filter = " OR ".join(
-            f"(table_catalog = '{c.split('.')[0]}' AND table_schema = '{c.split('.')[1]}')"
-            for c in self.catalogs
-        )
+        clauses: list[str] = []
+        for c in self.catalogs:
+            parts = c.split(".", 1)
+            cat = parts[0]
+            schema = parts[1] if len(parts) > 1 else None
+            if schema:
+                clauses.append(
+                    f"(table_catalog = '{cat}' AND table_schema = '{schema}')"
+                )
+            else:
+                clauses.append(f"(table_catalog = '{cat}')")
+        catalog_filter = " OR ".join(clauses)
         tbl_rows = self.sql.execute(
             f"SELECT * FROM system.information_schema.tables WHERE {catalog_filter}"
         )

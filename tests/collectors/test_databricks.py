@@ -2,7 +2,12 @@
 import json
 from pathlib import Path
 
-from powerbi_analyzer.collectors.databricks import DatabricksCollector, SqlExecutor
+from powerbi_analyzer.collectors.databricks import (
+    DatabricksCollector,
+    SqlExecutor,
+    _as_dict,
+    _as_list,
+)
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "databricks" / "system_tables"
 
@@ -87,3 +92,28 @@ def test_referenced_by_powerbi_filtered_from_query_history():
     _, cat = c.collect()
     # No referenced_tables in fixture rows; expect empty list rather than crash
     assert cat.referenced_by_powerbi == []
+
+
+def test_as_dict_handles_dict() -> None:
+    assert _as_dict({"warehouse_id": "abc"}) == {"warehouse_id": "abc"}
+
+
+def test_as_dict_parses_json_string() -> None:
+    """Some Databricks SQL connector paths return STRUCT cells as JSON strings."""
+    assert _as_dict('{"warehouse_id": "abc", "cluster_id": null}') == {
+        "warehouse_id": "abc",
+        "cluster_id": None,
+    }
+
+
+def test_as_dict_handles_none_and_garbage() -> None:
+    assert _as_dict(None) == {}
+    assert _as_dict("not json") == {}
+    assert _as_dict(42) == {}
+
+
+def test_as_list_handles_list_string_none() -> None:
+    assert _as_list(["a", "b"]) == ["a", "b"]
+    assert _as_list('["x", "y"]') == ["x", "y"]
+    assert _as_list(None) == []
+    assert _as_list("nope") == []

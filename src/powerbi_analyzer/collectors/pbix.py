@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
+import pandas as pd
 from pbixray import PBIXRay  # type: ignore[import-untyped]
 
 from powerbi_analyzer.collectors.base import Collector, CollectorError
@@ -26,15 +27,23 @@ from powerbi_analyzer.domain.semantic_model import (
 )
 
 _CARDINALITY: dict[str, str] = {
+    # pbixray DataFrame values
+    "1:1": "one-to-one",
+    "1:M": "one-to-many",
+    "M:1": "many-to-one",
+    "M:M": "many-to-many",
+    # Long-form values (defensive — older pbixray or other sources)
     "OneToOne": "one-to-one",
     "OneToMany": "one-to-many",
     "ManyToOne": "many-to-one",
     "ManyToMany": "many-to-many",
 }
 _CROSS_FILTER: dict[str, str] = {
+    "Single": "single",
+    "Both": "both",
+    "None": "none",
     "OneDirection": "single",
     "BothDirections": "both",
-    "None": "none",
 }
 # model.bim JSON cardinality values (already lower-kebab or hyphenated)
 _BIM_CARDINALITY: dict[str, str] = {
@@ -62,6 +71,23 @@ _CrossFilterType = Literal["single", "both", "none"]
 _SourceType = Literal["m", "dax", "calculated", "calculatedTable", "entity"]
 
 
+def _records(obj: Any) -> list[dict[str, Any]]:
+    """Normalize a pbixray attribute into a list of plain dicts.
+
+    pbixray 0.5 returns pandas DataFrames; older releases or test mocks may
+    pass list-of-dicts or empty containers.
+    """
+    if obj is None:
+        return []
+    if isinstance(obj, pd.DataFrame):
+        if obj.empty:
+            return []
+        return cast(list[dict[str, Any]], obj.to_dict(orient="records"))
+    if isinstance(obj, list):
+        return [r for r in obj if isinstance(r, dict)]
+    return []
+
+
 class PbixCollector(Collector):
     mode = "pbix"
 
@@ -87,16 +113,40 @@ class PbixCollector(Collector):
     def _collect_pbix(self, path: Path) -> SemanticModel:
         ray = PBIXRay(str(path))
 
+        # pbixray 0.5 exposes most attributes as pandas DataFrames; older or
+        # mocked variants may return list-of-dicts. Normalize both.
+        schema_records = _records(ray.schema)
+        stats_records = _records(ray.statistics)
+
+        # Per-column distinct count (pbixray "Cardinality" on statistics)
+        cardinality_by_col: dict[tuple[str, str], int] = {}
+        for s in stats_records:
+            tn, cn, card = s.get("TableName"), s.get("ColumnName"), s.get("Cardinality")
+            if tn and cn and card is not None:
+                try:
+                    cardinality_by_col[(tn, cn)] = int(card)
+                except (TypeError, ValueError):
+                    pass
+
+        # Group schema rows by table for O(1) lookup
+        schema_by_table: dict[str, list[dict[str, Any]]] = {}
+        for row in schema_records:
+            schema_by_table.setdefault(row.get("TableName", ""), []).append(row)
+
         tables: list[Table] = []
         for tname in ray.tables:
             cols: list[Column] = []
-            schema = ray.schema(tname) if hasattr(ray, "schema") else []
-            for col in schema:
+            for col in schema_by_table.get(tname, []):
+                col_name = col.get("ColumnName")
+                if not col_name:
+                    continue
                 cols.append(
                     Column(
-                        name=col["ColumnName"],
-                        data_type=col.get("DataType", "string"),
-                        cardinality=col.get("Cardinality"),
+                        name=col_name,
+                        data_type=str(
+                            col.get("PandasDataType") or col.get("DataType") or "string"
+                        ),
+                        cardinality=cardinality_by_col.get((tname, col_name)),
                         is_nullable=bool(col.get("IsNullable", True)),
                         is_key=bool(col.get("IsKey", False)),
                         is_hidden=bool(col.get("IsHidden", False)),
@@ -105,65 +155,87 @@ class PbixCollector(Collector):
                         max_length=col.get("MaxLength"),
                     )
                 )
-            storage_raw = schema[-1].get("StorageMode", "import").lower() if schema else "import"
-            storage = StorageMode(storage_raw)
             tables.append(
                 Table(
                     name=tname,
                     columns=cols,
-                    row_count=ray.statistics.get(tname, {}).get("RowCount"),
+                    row_count=None,
                     is_hidden=False,
-                    storage_mode=storage,
+                    storage_mode=StorageMode.IMPORT,
                     partitions=[],
                     is_aggregation_table=False,
                     aggregation_targets=[],
                 )
             )
 
-        relationships = [
-            Relationship(
-                from_table=r["FromTable"],
-                from_column=r["FromColumn"],
-                to_table=r["ToTable"],
-                to_column=r["ToColumn"],
-                cardinality=cast(
-                    _CardinalityType,
-                    _CARDINALITY.get(r.get("Cardinality", "ManyToOne"), "many-to-one"),
-                ),
-                cross_filter=cast(
-                    _CrossFilterType,
-                    _CROSS_FILTER.get(r.get("CrossFilter", "OneDirection"), "single"),
-                ),
-                is_active=bool(r.get("IsActive", True)),
-                assume_referential_integrity=bool(r.get("RelyOnReferentialIntegrity", False)),
+        relationships: list[Relationship] = []
+        for r in _records(ray.relationships):
+            from_table = r.get("FromTableName") or r.get("FromTable")
+            to_table = r.get("ToTableName") or r.get("ToTable")
+            from_col = r.get("FromColumnName") or r.get("FromColumn")
+            to_col = r.get("ToColumnName") or r.get("ToColumn")
+            if not (from_table and to_table and from_col and to_col):
+                # Skip auto-DateTable artifacts that have no resolved target
+                continue
+            card_raw = str(r.get("Cardinality") or "M:1")
+            cross_raw = str(r.get("CrossFilteringBehavior") or r.get("CrossFilter") or "Single")
+            relationships.append(
+                Relationship(
+                    from_table=from_table,
+                    from_column=from_col,
+                    to_table=to_table,
+                    to_column=to_col,
+                    cardinality=cast(
+                        _CardinalityType, _CARDINALITY.get(card_raw, "many-to-one")
+                    ),
+                    cross_filter=cast(
+                        _CrossFilterType, _CROSS_FILTER.get(cross_raw, "single")
+                    ),
+                    is_active=bool(r.get("IsActive", True)),
+                    assume_referential_integrity=bool(
+                        r.get("RelyOnReferentialIntegrity", False)
+                    ),
+                )
             )
-            for r in ray.relationships
-        ]
 
-        measures = [
-            Measure(
-                name=m["Name"],
-                table=m.get("Table", ""),
-                expression=m.get("Expression", ""),
-                format_string=m.get("FormatString"),
-                referenced_columns=[],
-                referenced_measures=[],
+        measures: list[Measure] = []
+        for m in _records(ray.dax_measures):
+            name = m.get("Name")
+            if not name:
+                continue
+            measures.append(
+                Measure(
+                    name=name,
+                    table=m.get("TableName") or m.get("Table") or "",
+                    expression=m.get("Expression") or "",
+                    format_string=m.get("FormatString"),
+                    referenced_columns=[],
+                    referenced_measures=[],
+                )
             )
-            for m in ray.dax_measures
-        ]
-        calculated_columns = [
-            CalculatedColumn(
-                name=c["Name"],
-                table=c.get("Table", ""),
-                expression=c.get("Expression", ""),
-                data_type=c.get("DataType", "string"),
+
+        calculated_columns: list[CalculatedColumn] = []
+        for c in _records(ray.dax_columns):
+            name = c.get("ColumnName") or c.get("Name")
+            if not name:
+                continue
+            calculated_columns.append(
+                CalculatedColumn(
+                    name=name,
+                    table=c.get("TableName") or c.get("Table") or "",
+                    expression=c.get("Expression") or "",
+                    data_type=str(c.get("DataType") or "string"),
+                )
             )
-            for c in ray.dax_columns
-        ]
-        calculated_tables = [
-            CalculatedTable(name=t["Name"], expression=t.get("Expression", ""))
-            for t in ray.dax_tables
-        ]
+
+        calculated_tables: list[CalculatedTable] = []
+        for t in _records(ray.dax_tables):
+            name = t.get("TableName") or t.get("Name")
+            if not name:
+                continue
+            calculated_tables.append(
+                CalculatedTable(name=name, expression=t.get("Expression") or "")
+            )
 
         visuals_by_page = self._extract_visuals(path)
 

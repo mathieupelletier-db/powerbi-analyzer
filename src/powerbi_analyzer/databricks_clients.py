@@ -12,18 +12,43 @@ from powerbi_analyzer.collectors._sql import SqlExecutor
 
 
 class SdkSqlExecutor(SqlExecutor):
-    def __init__(self, *, profile: str) -> None:
+    def __init__(self, *, profile: str, warehouse_id: str | None = None) -> None:
         self.profile = profile
+        self.warehouse_id = warehouse_id
         self._wc = WorkspaceClient(profile=profile)
-        cfg = self._wc.config
-        self._conn = dbsql.connect(
-            server_hostname=cfg.host.replace("https://", ""),
-            http_path=os.environ.get("PBA_HTTP_PATH", ""),  # set per-warehouse at run time
-            access_token=cfg.token,
-        )
+        # Resolve http_path eagerly so we fail fast with a useful error rather
+        # than hitting databricks-sql-connector's destructor bug
+        # (Connection.__del__ raises AttributeError when __init__ fails).
+        explicit = os.environ.get("PBA_HTTP_PATH", "").strip()
+        if explicit:
+            self._http_path = explicit
+        elif warehouse_id:
+            self._http_path = f"/sql/1.0/warehouses/{warehouse_id}"
+        else:
+            raise ValueError(
+                "Cannot determine Databricks SQL HTTP path: pass --warehouse-id "
+                "(pba databricks) or set PBA_HTTP_PATH=/sql/1.0/warehouses/<id>."
+            )
+        # Lazy: connect on first query so import-time errors stay manageable.
+        self._conn: Any | None = None
+
+    def _connection(self) -> Any:
+        if self._conn is None:
+            cfg = self._wc.config
+            host = (cfg.host or "").replace("https://", "").rstrip("/")
+            if not host:
+                raise ValueError(
+                    f"Databricks profile {self.profile!r} has no host configured."
+                )
+            self._conn = dbsql.connect(
+                server_hostname=host,
+                http_path=self._http_path,
+                access_token=cfg.token,
+            )
+        return self._conn
 
     def execute(self, query: str) -> list[dict[str, Any]]:
-        with self._conn.cursor() as cur:
+        with self._connection().cursor() as cur:
             cur.execute(query)
             desc = cur.description or []
             cols = [d[0] for d in desc]
