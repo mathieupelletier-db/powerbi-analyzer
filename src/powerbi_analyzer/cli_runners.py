@@ -44,6 +44,23 @@ def _exit_code(findings: Sequence[Finding], fail_on: str) -> int:
     return 2 if has else 0
 
 
+def _ext_for_formats(formats: str) -> str:
+    """File suffix to use when --out is not provided. HTML wins if requested."""
+    return ".html" if "html" in formats.lower() else ".md"
+
+
+def _resolve_target(out: Path | None, formats: str, short_id: str) -> Path:
+    """Pick output path, defaulting to a timestamped file with the right suffix.
+
+    If --out is provided, honor it as-is so the user can override the suffix.
+    Otherwise pick .html when --formats includes html, else .md.
+    """
+    if out is not None:
+        return out
+    ext = _ext_for_formats(formats)
+    return Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{short_id}{ext}")
+
+
 def _write_report(
     result: RunResult,
     *,
@@ -106,7 +123,7 @@ def run_pbix(
         # No paths provided — nothing to report
         return 0
 
-    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
+    target = _resolve_target(out, formats, cache.short_id)
     _write_report(
         result,
         target=target,
@@ -157,16 +174,14 @@ def run_workspace(
         context={SemanticModel: sm, WorkspaceConfig: cfg},
         ignore=ignore,
     )
-    md = MarkdownReporter().render(
+    target = _resolve_target(out, formats, cache.short_id)
+    _write_report(
         result,
+        target=target,
+        formats=formats,
         target_description=f"workspace {workspace_id}",
         modes_run=["workspace"],
-        generated_at=datetime.now(UTC),
-        version=__version__,
     )
-    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
-    target.write_text(md)
-    print(f"wrote {target}")
     return _exit_code(result.findings, fail_on)
 
 
@@ -202,16 +217,14 @@ def run_databricks(
         ignore=ignore,
     )
 
-    md = MarkdownReporter().render(
+    target = _resolve_target(out, formats, cache.short_id)
+    _write_report(
         result,
+        target=target,
+        formats=formats,
         target_description=f"warehouse {warehouse_id}",
         modes_run=["databricks"],
-        generated_at=datetime.now(UTC),
-        version=__version__,
     )
-    target = out or Path(f"pba-audit-{datetime.now(UTC):%Y-%m-%d}-{cache.short_id}.md")
-    target.write_text(md)
-    print(f"wrote {target}")
     return _exit_code(result.findings, fail_on)
 
 
