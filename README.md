@@ -1,26 +1,28 @@
 # powerbi-analyzer (`pba`)
 
 Audit a Power BI on Databricks setup against the Databricks
-[Power BI on Databricks Best Practices Cheat Sheet](2025-04-power-bi-on-databricks-best-practices-cheat-sheet%20%281%29.pdf).
+[Power BI on Databricks Best Practices Cheat Sheet](2025-04-power-bi-on-databricks-best-practices-cheat-sheet.pdf).
 Produces a single Markdown or HTML report you can share with your team.
 
 ## What it checks
 
 42 rules across four phases:
 
-| Phase | Modes | Rules |
-|---|---|---|
-| Data Preparation | Databricks side | DP-001 … DP-010 |
-| SQL Serving | Databricks side | SS-001 … SS-010 |
-| Power BI Integration | `.pbix`, workspace, Databricks | IN-001 … IN-011 |
-| Power BI Report Design | `.pbix`, workspace | RD-001 … RD-011 |
+
+| Phase                  | Modes                          | Rules           |
+| ---------------------- | ------------------------------ | --------------- |
+| Data Preparation       | Databricks side                | DP-001 … DP-010 |
+| SQL Serving            | Databricks side                | SS-001 … SS-010 |
+| Power BI Integration   | `.pbix`, workspace, Databricks | IN-001 … IN-011 |
+| Power BI Report Design | `.pbix`, workspace             | RD-001 … RD-011 |
+
 
 See `docs/superpowers/specs/2026-05-01-powerbi-analyzer-design.md` for the full rule catalog.
 
 ## Install
 
 ```bash
-uv tool install git+https://github.com/<owner>/powerbi-analyzer
+uv tool install git+https://github.com/mathieupelletier-db/powerbi-analyzer
 # or for development
 git clone … && cd powerbi-analyzer
 uv venv && source .venv/bin/activate
@@ -66,6 +68,26 @@ Required permissions:
 pba init                 # writes pba.yaml
 $EDITOR pba.yaml         # fill in credentials and targets
 pba scan                 # produces a single combined report
+```
+
+## Output formats
+
+Two renderers are supported: `markdown` (default) and `html` (single self-contained
+file with embedded CSS, JS, and DM Sans font — safe to email or drop on a share).
+
+Per-command (`pba pbix`, `pba workspace`, `pba databricks`):
+
+```bash
+pba pbix report.pbix --out reports/audit.html        # inferred from .html suffix
+pba pbix report.pbix --out reports/audit.md --formats html   # or forced via flag
+```
+
+From `pba.yaml` (used by `pba scan`):
+
+```yaml
+output:
+  formats: [markdown, html]   # any subset; both written side-by-side
+  dir: reports/
 ```
 
 ## Sample output
