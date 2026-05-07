@@ -260,6 +260,8 @@ class WorkspaceCollector(Collector):
 
         # First dataset for v1 — extending to multiple is a follow-up
         ds_id = target_ds[0]
+        if not self.dataset_ids:
+            self._log_dataset_choice(ds_id, datasets)
         sm = self._semantic_model(ds_id, datasets)
 
         gateways = self.rest.list_gateways()
@@ -289,6 +291,27 @@ class WorkspaceCollector(Collector):
             automatic_publishing=bool(cap.get("automaticPublishing")),
         )
         return sm, cfg
+
+    @staticmethod
+    def _log_dataset_choice(picked_id: str, datasets: list[dict[str, Any]]) -> None:
+        """Tell the user which dataset we picked when they didn't pass --dataset.
+
+        v1 audits exactly one dataset; without --dataset we silently take
+        index [0] from /groups/{ws}/datasets. On Fabric workspaces that is
+        usually the auto-generated default semantic model, which is rarely
+        what users want to audit. Make the choice and the skipped models
+        visible so users notice and can re-run with --dataset if needed.
+        """
+        picked = next((d for d in datasets if d["id"] == picked_id), None)
+        picked_name = picked.get("name", "?") if picked else "?"
+        skipped = [d for d in datasets if d["id"] != picked_id]
+        print(f"selected dataset: {picked_name} ({picked_id})")
+        if skipped:
+            others = ", ".join(f"{d.get('name', '?')} ({d['id']})" for d in skipped)
+            print(
+                f"skipped {len(skipped)} other dataset(s) in this workspace: {others}\n"
+                "  (v1 audits one dataset; pass --dataset <guid> to choose explicitly)"
+            )
 
     def _semantic_model(self, ds_id: str, datasets: list[dict[str, Any]]) -> SemanticModel:
         ws, ds = self.workspace_id, ds_id
