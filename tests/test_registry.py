@@ -3,6 +3,7 @@ import sys
 from types import ModuleType
 
 import pytest
+
 from powerbi_analyzer.domain.finding import Phase, Severity
 from powerbi_analyzer.domain.semantic_model import SemanticModel
 from powerbi_analyzer.rules._registry import RuleRegistry, load_module_as_rule

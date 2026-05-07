@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.sql_serving import enable_auto_stop as rule
-
 from tests.builders import make_warehouse
 
 

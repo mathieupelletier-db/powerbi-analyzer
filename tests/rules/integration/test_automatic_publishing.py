@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.integration import automatic_publishing as rule
-
 from tests.builders import make_catalog_state, make_table_metadata, make_workspace_config
 
 

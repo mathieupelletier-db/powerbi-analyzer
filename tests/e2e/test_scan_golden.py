@@ -8,7 +8,6 @@ from powerbi_analyzer.domain.warehouse import WarehouseState
 from powerbi_analyzer.engine import Engine
 from powerbi_analyzer.reporters.markdown import MarkdownReporter
 from powerbi_analyzer.rules import RuleRegistry
-
 from tests.builders import (
     make_catalog_state,
     make_semantic_model,

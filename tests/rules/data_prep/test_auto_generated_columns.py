@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.data_prep import auto_generated_columns as rule
-
 from tests.builders import make_query, make_warehouse
 
 

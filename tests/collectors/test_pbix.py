@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from powerbi_analyzer.collectors.pbix import PbixCollector
 from powerbi_analyzer.domain.semantic_model import SemanticModel
 
@@ -37,9 +38,9 @@ def test_collect_small_bad_pbip_has_many_to_many() -> None:
     sm: SemanticModel = PbixCollector(path=FIXTURES / "small_bad.pbip").collect()
     assert sm.source == "pbip"
     # Has a many-to-many relationship (RD-005 trigger)
-    assert any(
-        r.cardinality == "many-to-many" for r in sm.relationships
-    ), "small_bad should have a many-to-many relationship"
+    assert any(r.cardinality == "many-to-many" for r in sm.relationships), (
+        "small_bad should have a many-to-many relationship"
+    )
     # Has a calculated column (RD-011 trigger)
     assert sm.calculated_columns, "small_bad should declare a calculated column"
 

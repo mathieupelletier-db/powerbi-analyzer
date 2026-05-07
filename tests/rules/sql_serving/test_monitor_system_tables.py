@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.sql_serving import monitor_system_tables as rule
-
 from tests.builders import make_warehouse, make_warehouse_event
 
 

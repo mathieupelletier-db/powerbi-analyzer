@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.data_prep import compute_statistics as rule
-
 from tests.builders import make_catalog_state, make_table_metadata, make_warehouse
 
 

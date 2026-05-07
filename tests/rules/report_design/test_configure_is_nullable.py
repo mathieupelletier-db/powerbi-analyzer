@@ -1,7 +1,6 @@
 from powerbi_analyzer.domain.catalog import ColumnMetadata
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.report_design import configure_is_nullable as rule
-
 from tests.builders import (
     make_catalog_state,
     make_column,

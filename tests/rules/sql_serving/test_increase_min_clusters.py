@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.sql_serving import increase_min_clusters as rule
-
 from tests.builders import make_query, make_warehouse
 
 

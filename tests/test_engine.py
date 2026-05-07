@@ -3,7 +3,6 @@ from powerbi_analyzer.domain.semantic_model import SemanticModel
 from powerbi_analyzer.engine import Engine
 from powerbi_analyzer.rules import RuleRegistry
 from powerbi_analyzer.rules._registry import RuleSpec
-
 from tests.builders import make_semantic_model, make_warehouse
 
 

@@ -1,5 +1,6 @@
 # tests/collectors/test_base.py
 import pytest
+
 from powerbi_analyzer.collectors.base import Collector, CollectorError
 
 

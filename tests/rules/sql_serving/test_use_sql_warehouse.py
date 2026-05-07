@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Severity, Status
 from powerbi_analyzer.rules.sql_serving import use_sql_warehouse as rule
-
 from tests.builders import make_query, make_warehouse
 
 

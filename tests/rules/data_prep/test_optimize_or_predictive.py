@@ -2,7 +2,6 @@ from datetime import UTC, datetime, timedelta
 
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.data_prep import optimize_or_predictive as rule
-
 from tests.builders import make_catalog_state, make_table_metadata, make_warehouse
 
 

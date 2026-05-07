@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.integration import sso_enabled as rule
-
 from tests.builders import make_workspace_config
 
 

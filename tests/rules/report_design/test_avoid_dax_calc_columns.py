@@ -1,7 +1,6 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.domain.semantic_model import CalculatedColumn, CalculatedTable
 from powerbi_analyzer.rules.report_design import avoid_dax_calc_columns as rule
-
 from tests.builders import make_semantic_model
 
 

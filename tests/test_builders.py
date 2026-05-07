@@ -1,5 +1,4 @@
 from powerbi_analyzer.domain.semantic_model import StorageMode
-
 from tests.builders import (
     make_catalog_state,
     make_column,

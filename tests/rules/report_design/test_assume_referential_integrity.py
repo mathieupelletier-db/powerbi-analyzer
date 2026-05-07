@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.report_design import assume_referential_integrity as rule
-
 from tests.builders import make_column, make_relationship, make_semantic_model, make_table
 
 

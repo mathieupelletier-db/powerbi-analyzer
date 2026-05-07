@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.report_design import efficient_dax as rule
-
 from tests.builders import make_measure, make_semantic_model
 
 

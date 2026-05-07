@@ -1,7 +1,6 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.domain.semantic_model import ParallelismConfig
 from powerbi_analyzer.rules.integration import query_parallelization as rule
-
 from tests.builders import make_workspace_config
 
 

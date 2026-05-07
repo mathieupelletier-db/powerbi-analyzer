@@ -1,6 +1,7 @@
 # tests/test_cli.py
-from powerbi_analyzer.cli import app
 from typer.testing import CliRunner
+
+from powerbi_analyzer.cli import app
 
 runner = CliRunner()
 

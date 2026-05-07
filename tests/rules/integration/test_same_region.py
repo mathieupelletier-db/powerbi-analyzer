@@ -1,6 +1,5 @@
 from powerbi_analyzer.domain.finding import Status
 from powerbi_analyzer.rules.integration import same_region as rule
-
 from tests.builders import make_warehouse, make_workspace_config
 
 
