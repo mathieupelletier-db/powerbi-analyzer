@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol
 
 import requests
 
@@ -75,9 +75,7 @@ def _raise_with_body(r: requests.Response, context: str) -> None:
     except ValueError:
         if r.text:
             detail = f" — {r.text[:500]}"
-    raise requests.HTTPError(
-        f"{r.status_code} {r.reason} for {context}{detail}", response=r
-    )
+    raise requests.HTTPError(f"{r.status_code} {r.reason} for {context}{detail}", response=r)
 
 
 class HttpPowerBiRestClient:
@@ -140,13 +138,13 @@ class HttpXmlaRestClient:
 
     # INFO.VIEW.RELATIONSHIPS encodes cardinality as two strings; classic
     # INFO.RELATIONSHIPS uses a single integer code. Bridge the two.
-    _CARD_PAIR_TO_CODE: dict[tuple[str, str], int] = {
+    _CARD_PAIR_TO_CODE: ClassVar[dict[tuple[str, str], int]] = {
         ("One", "One"): 1,
         ("One", "Many"): 2,
         ("Many", "One"): 3,
         ("Many", "Many"): 4,
     }
-    _CROSS_FILTER_TO_CODE: dict[str, int] = {
+    _CROSS_FILTER_TO_CODE: ClassVar[dict[str, int]] = {
         "OneDirection": 1,
         "BothDirections": 2,
     }
@@ -174,9 +172,7 @@ class HttpXmlaRestClient:
             json=body,
             timeout=60,
         )
-        _raise_with_body(
-            r, f"POST executeQueries (workspace {ws}, dataset {ds}, query {query!r})"
-        )
+        _raise_with_body(r, f"POST executeQueries (workspace {ws}, dataset {ds}, query {query!r})")
         rows: list[dict[str, Any]] = r.json()["results"][0]["tables"][0]["rows"]
         return self._strip_keys(rows)
 
@@ -354,9 +350,7 @@ class WorkspaceCollector(Collector):
                     cardinality=_CARD.get(r.get("Cardinality") or 2, "one-to-many"),
                     cross_filter="single" if r.get("CrossFilteringBehavior") == 1 else "both",
                     is_active=bool(r.get("IsActive", True)),
-                    assume_referential_integrity=bool(
-                        r.get("RelyOnReferentialIntegrity", False)
-                    ),
+                    assume_referential_integrity=bool(r.get("RelyOnReferentialIntegrity", False)),
                 )
             )
 

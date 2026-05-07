@@ -37,9 +37,7 @@ class SdkSqlExecutor(SqlExecutor):
             cfg = self._wc.config
             host = (cfg.host or "").replace("https://", "").rstrip("/")
             if not host:
-                raise ValueError(
-                    f"Databricks profile {self.profile!r} has no host configured."
-                )
+                raise ValueError(f"Databricks profile {self.profile!r} has no host configured.")
             self._conn = dbsql.connect(
                 server_hostname=host,
                 http_path=self._http_path,

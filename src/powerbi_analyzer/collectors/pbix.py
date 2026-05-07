@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import zipfile
 from datetime import UTC, datetime
@@ -123,10 +124,8 @@ class PbixCollector(Collector):
         for s in stats_records:
             tn, cn, card = s.get("TableName"), s.get("ColumnName"), s.get("Cardinality")
             if tn and cn and card is not None:
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     cardinality_by_col[(tn, cn)] = int(card)
-                except (TypeError, ValueError):
-                    pass
 
         # Group schema rows by table for O(1) lookup
         schema_by_table: dict[str, list[dict[str, Any]]] = {}
@@ -143,9 +142,7 @@ class PbixCollector(Collector):
                 cols.append(
                     Column(
                         name=col_name,
-                        data_type=str(
-                            col.get("PandasDataType") or col.get("DataType") or "string"
-                        ),
+                        data_type=str(col.get("PandasDataType") or col.get("DataType") or "string"),
                         cardinality=cardinality_by_col.get((tname, col_name)),
                         is_nullable=bool(col.get("IsNullable", True)),
                         is_key=bool(col.get("IsKey", False)),
@@ -185,16 +182,10 @@ class PbixCollector(Collector):
                     from_column=from_col,
                     to_table=to_table,
                     to_column=to_col,
-                    cardinality=cast(
-                        _CardinalityType, _CARDINALITY.get(card_raw, "many-to-one")
-                    ),
-                    cross_filter=cast(
-                        _CrossFilterType, _CROSS_FILTER.get(cross_raw, "single")
-                    ),
+                    cardinality=cast(_CardinalityType, _CARDINALITY.get(card_raw, "many-to-one")),
+                    cross_filter=cast(_CrossFilterType, _CROSS_FILTER.get(cross_raw, "single")),
                     is_active=bool(r.get("IsActive", True)),
-                    assume_referential_integrity=bool(
-                        r.get("RelyOnReferentialIntegrity", False)
-                    ),
+                    assume_referential_integrity=bool(r.get("RelyOnReferentialIntegrity", False)),
                 )
             )
 

@@ -189,9 +189,7 @@ class DatabricksCollector(Collector):
             cat = parts[0]
             schema = parts[1] if len(parts) > 1 else None
             if schema:
-                clauses.append(
-                    f"(table_catalog = '{cat}' AND table_schema = '{schema}')"
-                )
+                clauses.append(f"(table_catalog = '{cat}' AND table_schema = '{schema}')")
             else:
                 clauses.append(f"(table_catalog = '{cat}')")
         catalog_filter = " OR ".join(clauses)
