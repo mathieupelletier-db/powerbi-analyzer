@@ -204,31 +204,31 @@ class DatabricksCollector(Collector):
         )
 
         cols_by_table: dict[str, list[ColumnMetadata]] = {}
-        for c in col_rows:
-            full = f"{c['table_catalog']}.{c['table_schema']}.{c['table_name']}"
+        for col in col_rows:
+            full = f"{col['table_catalog']}.{col['table_schema']}.{col['table_name']}"
             cols_by_table.setdefault(full, []).append(
                 ColumnMetadata(
-                    name=c["column_name"],
-                    data_type=c["full_data_type"],
-                    is_nullable=c["is_nullable"] == "YES",
+                    name=col["column_name"],
+                    data_type=col["full_data_type"],
+                    is_nullable=col["is_nullable"] == "YES",
                     max_length_observed=None,
                 )
             )
 
         cons_by_table: dict[str, dict[str, Any]] = {}
-        for c in cons_rows:
-            full = f"{c['table_catalog']}.{c['table_schema']}.{c['table_name']}"
+        for con in cons_rows:
+            full = f"{con['table_catalog']}.{con['table_schema']}.{con['table_name']}"
             cons_by_table.setdefault(full, {"pk": None, "rely": False, "fks": []})
-            if c["constraint_type"] == "PRIMARY KEY":
-                cons_by_table[full]["pk"] = list(c.get("key_columns", []))
-                cons_by_table[full]["rely"] = bool(c.get("rely"))
-            elif c["constraint_type"] == "FOREIGN KEY":
+            if con["constraint_type"] == "PRIMARY KEY":
+                cons_by_table[full]["pk"] = list(con.get("key_columns", []))
+                cons_by_table[full]["rely"] = bool(con.get("rely"))
+            elif con["constraint_type"] == "FOREIGN KEY":
                 cons_by_table[full]["fks"].append(
                     ForeignKey(
-                        from_columns=list(c.get("key_columns", [])),
-                        to_table=c.get("referenced_table", ""),
-                        to_columns=list(c.get("referenced_columns", [])),
-                        rely=bool(c.get("rely")),
+                        from_columns=list(con.get("key_columns", [])),
+                        to_table=con.get("referenced_table", ""),
+                        to_columns=list(con.get("referenced_columns", [])),
+                        rely=bool(con.get("rely")),
                     )
                 )
 

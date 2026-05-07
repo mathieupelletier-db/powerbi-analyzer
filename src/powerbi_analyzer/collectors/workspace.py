@@ -123,7 +123,7 @@ class HttpPowerBiRestClient:
         if r.status_code in (401, 403, 404):
             return []
         _raise_with_body(r, "GET /gateways")
-        return r.json().get("value", []) or []  # type: ignore[no-any-return]
+        return r.json().get("value", []) or []
 
 
 class HttpXmlaRestClient:
@@ -209,8 +209,11 @@ class HttpXmlaRestClient:
         if used_view:
             for r in rows:
                 if "Cardinality" not in r:
-                    pair = (r.get("FromCardinality"), r.get("ToCardinality"))
-                    r["Cardinality"] = self._CARD_PAIR_TO_CODE.get(pair, 3)
+                    fc, tc = r.get("FromCardinality"), r.get("ToCardinality")
+                    pair = (str(fc), str(tc)) if fc is not None and tc is not None else None
+                    r["Cardinality"] = (
+                        self._CARD_PAIR_TO_CODE.get(pair, 3) if pair is not None else 3
+                    )
                 xf = r.get("CrossFilteringBehavior")
                 if isinstance(xf, str):
                     r["CrossFilteringBehavior"] = self._CROSS_FILTER_TO_CODE.get(xf, 1)
