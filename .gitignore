@@ -26,6 +26,9 @@ venv/
 .vscode/
 *.swp
 
+# macOS
+.DS_Store
+
 # pba runtime (cache lives at ~/.cache/pba/, outside the repo — no entry needed)
 reports/
 .pba-cache/
