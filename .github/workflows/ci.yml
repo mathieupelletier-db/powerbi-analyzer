@@ -14,9 +14,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
       - uses: astral-sh/setup-uv@v3
-      - name: Set up Python
-        run: uv python install ${{ matrix.python }}
       - name: Install
         run: uv pip install --system -e ".[dev]"
       - name: Lint
