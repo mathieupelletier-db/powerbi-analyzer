@@ -21,6 +21,30 @@ See `docs/superpowers/specs/2026-05-01-powerbi-analyzer-design.md` for the full 
 
 ## Install
 
+### Prerequisite: `uv`
+
+`pba` is built and distributed with [uv](https://docs.astral.sh/uv/). If you
+don't have it yet:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Homebrew (macOS / Linux)
+brew install uv
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Restart your shell (or `source ~/.zshrc` / `~/.bashrc`) and verify:
+
+```bash
+uv --version
+```
+
+### Install `pba`
+
 ```bash
 uv tool install git+https://github.com/mathieupelletier-db/powerbi-analyzer
 # or for development
