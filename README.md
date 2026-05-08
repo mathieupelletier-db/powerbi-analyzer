@@ -46,9 +46,9 @@ uv --version
 ### Install `pba`
 
 ```bash
-uv tool install git+https://github.com/mathieupelletier-db/powerbi-analyzer
+uv tool install git+https://github.com/databricks-solutions/powerbi-analyzer
 # or for development
-git clone … && cd powerbi-analyzer
+git clone https://github.com/databricks-solutions/powerbi-analyzer.git && cd powerbi-analyzer
 uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 pre-commit install
@@ -116,8 +116,8 @@ output:
 
 ## Sample output
 
-See [`examples/sample-report.md`](examples/sample-report.md) and
-[`examples/sample-report.html`](examples/sample-report.html) for what the report looks like
+See `[examples/sample-report.md](examples/sample-report.md)` and
+`[examples/sample-report.html](examples/sample-report.html)` for what the report looks like
 on the deliberately-bad fixture.
 
 ## Development
@@ -137,21 +137,23 @@ a bug — the cache is sanitized of secrets, GUIDs, and connection strings.
 
 ## License
 
-&copy; 2025 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source]. All included or referenced third party libraries are subject to the licenses set forth below.
+&copy; 2025 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [[https://databricks.com/db-license-source]](https://databricks.com/db-license-source]). All included or referenced third party libraries are subject to the licenses set forth below.
 
-| library                  | description                                                            | license      | source                                                                |
-| ------------------------ | ---------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------- |
-| typer                    | Build CLIs from Python type hints                                      | MIT          | https://github.com/fastapi/typer                                      |
-| pydantic                 | Data validation and settings management                                | MIT          | https://github.com/pydantic/pydantic                                  |
-| jinja2                   | HTML report templating                                                 | BSD-3-Clause | https://github.com/pallets/jinja                                      |
-| pyyaml                   | YAML parser for `pba.yaml` config                                      | MIT          | https://github.com/yaml/pyyaml                                        |
-| rich                     | Terminal formatting for CLI output                                     | MIT          | https://github.com/Textualize/rich                                    |
-| msal                     | Microsoft Authentication Library (Power BI device-code / SP auth)      | MIT          | https://github.com/AzureAD/microsoft-authentication-library-for-python |
-| requests                 | HTTP client for Power BI REST and XMLA Execute Queries                 | Apache-2.0   | https://github.com/psf/requests                                       |
-| databricks-sdk           | Workspace, warehouse, and system-table access                          | Apache-2.0   | https://github.com/databricks/databricks-sdk-py                       |
-| databricks-sql-connector | SQL warehouse query execution (with `[pyarrow]` extra for cloud fetch) | Apache-2.0   | https://github.com/databricks/databricks-sql-python                   |
-| pyarrow                  | Columnar transport for cloud-fetch result sets                         | Apache-2.0   | https://github.com/apache/arrow                                       |
-| pbixray                  | Parse `.pbix` / `.pbip` semantic models                                | MIT          | https://github.com/Hugoberry/pbixray                                  |
+
+| library                  | description                                                            | license      | source                                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| typer                    | Build CLIs from Python type hints                                      | MIT          | [https://github.com/fastapi/typer](https://github.com/fastapi/typer)                                                                             |
+| pydantic                 | Data validation and settings management                                | MIT          | [https://github.com/pydantic/pydantic](https://github.com/pydantic/pydantic)                                                                     |
+| jinja2                   | HTML report templating                                                 | BSD-3-Clause | [https://github.com/pallets/jinja](https://github.com/pallets/jinja)                                                                             |
+| pyyaml                   | YAML parser for `pba.yaml` config                                      | MIT          | [https://github.com/yaml/pyyaml](https://github.com/yaml/pyyaml)                                                                                 |
+| rich                     | Terminal formatting for CLI output                                     | MIT          | [https://github.com/Textualize/rich](https://github.com/Textualize/rich)                                                                         |
+| msal                     | Microsoft Authentication Library (Power BI device-code / SP auth)      | MIT          | [https://github.com/AzureAD/microsoft-authentication-library-for-python](https://github.com/AzureAD/microsoft-authentication-library-for-python) |
+| requests                 | HTTP client for Power BI REST and XMLA Execute Queries                 | Apache-2.0   | [https://github.com/psf/requests](https://github.com/psf/requests)                                                                               |
+| databricks-sdk           | Workspace, warehouse, and system-table access                          | Apache-2.0   | [https://github.com/databricks/databricks-sdk-py](https://github.com/databricks/databricks-sdk-py)                                               |
+| databricks-sql-connector | SQL warehouse query execution (with `[pyarrow]` extra for cloud fetch) | Apache-2.0   | [https://github.com/databricks/databricks-sql-python](https://github.com/databricks/databricks-sql-python)                                       |
+| pyarrow                  | Columnar transport for cloud-fetch result sets                         | Apache-2.0   | [https://github.com/apache/arrow](https://github.com/apache/arrow)                                                                               |
+| pbixray                  | Parse `.pbix` / `.pbip` semantic models                                | MIT          | [https://github.com/Hugoberry/pbixray](https://github.com/Hugoberry/pbixray)                                                                     |
+
 
 The full Databricks DB License text is in [LICENSE.md](LICENSE.md).
 
