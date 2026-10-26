@@ -1,0 +1,8 @@
+[
+  {"constraint_catalog": "main", "constraint_schema": "gold", "constraint_name": "pk_fact_sales",
+   "table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "column_name": "region_id", "ordinal_position": 2},
+  {"constraint_catalog": "main", "constraint_schema": "gold", "constraint_name": "pk_fact_sales",
+   "table_catalog": "main", "table_schema": "gold", "table_name": "fact_sales",
+   "column_name": "id", "ordinal_position": 1}
+]

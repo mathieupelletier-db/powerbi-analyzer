@@ -1,8 +1,9 @@
 from collections import Counter
 
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
-from powerbi_analyzer.domain.warehouse import WarehouseState
+from powerbi_analyzer.domain.warehouse import WarehouseState, is_powerbi_client
 from powerbi_analyzer.rules import rule
+from powerbi_analyzer.rules._attribution import history_gap
 
 RULE_ID = "DP-003"
 NAME = "Use SQL views or persisted tables for repeated aggregations"
@@ -14,11 +15,12 @@ DOCS_URL = "https://docs.databricks.com/sql/user/queries/index.html"
 
 @rule(RULE_ID)
 def check(warehouse: WarehouseState) -> Finding:
-    pbi = [
-        q
-        for q in warehouse.query_history
-        if (q.client_application or "").lower().startswith("power bi")
-    ]
+    gap = history_gap(warehouse)
+    if gap:
+        return Finding.not_applicable(
+            RULE_ID, NAME, phase=PHASE, target=warehouse.name, reason=gap, docs_url=DOCS_URL
+        )
+    pbi = [q for q in warehouse.query_history if is_powerbi_client(q.client_application)]
     if not pbi:
         return Finding.passed(
             RULE_ID,

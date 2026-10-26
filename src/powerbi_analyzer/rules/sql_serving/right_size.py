@@ -1,7 +1,7 @@
 from statistics import mean
 
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
-from powerbi_analyzer.domain.warehouse import WarehouseState
+from powerbi_analyzer.domain.warehouse import WarehouseState, is_powerbi_client
 from powerbi_analyzer.rules import rule
 
 RULE_ID = "SS-004"
@@ -29,8 +29,7 @@ def check(warehouse: WarehouseState) -> Finding:
     pbi = [
         q
         for q in warehouse.query_history
-        if (q.client_application or "").lower().startswith("power bi")
-        and q.compute_used_mb is not None
+        if is_powerbi_client(q.client_application) and q.compute_used_mb is not None
     ]
     if not pbi:
         return Finding.passed(

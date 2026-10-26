@@ -2,7 +2,10 @@
   {
     "statement_id": "q1",
     "warehouse_id": "wh-test-001",
-    "compute": {"warehouse_id": "wh-test-001", "cluster_id": null},
+    "compute": {
+      "warehouse_id": "wh-test-001",
+      "cluster_id": null
+    },
     "client_application": "Power BI Desktop",
     "statement_type": "SELECT",
     "start_time": "2026-04-29T10:00:00Z",
@@ -13,12 +16,15 @@
     "produced_rows": 1000,
     "spilled_local_bytes": 0,
     "executed_as_user_name": "bi-svc",
-    "read_partitions": []
+    "read_partitions": 3
   },
   {
     "statement_id": "q2",
     "warehouse_id": null,
-    "compute": {"warehouse_id": null, "cluster_id": "cluster-XYZ"},
+    "compute": {
+      "warehouse_id": null,
+      "cluster_id": "cluster-XYZ"
+    },
     "client_application": "Power BI Service",
     "statement_type": "SELECT",
     "start_time": "2026-04-29T10:05:00Z",
@@ -28,5 +34,23 @@
     "compute_used_mb": 64,
     "produced_rows": 10,
     "spilled_local_bytes": 0
+  },
+  {
+    "statement_id": "q3",
+    "warehouse_id": "wh-test-001",
+    "compute": {
+      "warehouse_id": "wh-test-001",
+      "cluster_id": null
+    },
+    "client_application": "dbt",
+    "statement_type": "INSERT",
+    "start_time": "2026-04-29T11:00:00Z",
+    "end_time": "2026-04-29T11:00:30Z",
+    "total_duration_ms": 30000,
+    "waiting_for_compute_duration_ms": 0,
+    "compute_used_mb": 512,
+    "produced_rows": 0,
+    "spilled_local_bytes": 0,
+    "read_partitions": 12
   }
 ]

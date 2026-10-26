@@ -73,5 +73,83 @@ def test_connection_is_lazy(monkeypatch: pytest.MonkeyPatch) -> None:
         kwargs = dbsql.connect.call_args.kwargs
         assert kwargs["server_hostname"] == "example.cloud.databricks.com"
         assert kwargs["http_path"] == "/sql/1.0/warehouses/abc"
-        assert kwargs["access_token"] == "tok"
+        # Auth is delegated to the SDK config so OAuth / CLI profiles work, not just PATs.
+        assert "access_token" not in kwargs
+        assert kwargs["credentials_provider"]() is ex._wc.config.authenticate
         assert rows == [{"col": "v"}]
+
+
+def test_connect_works_for_oauth_profile_without_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """databricks-cli / OAuth profiles have no static token; must not fall back to browser U2M."""
+    monkeypatch.delenv("PBA_HTTP_PATH", raising=False)
+    from powerbi_analyzer import databricks_clients
+
+    wc = _patch_workspace_client()
+    wc.config.token = None
+    with (
+        patch.object(databricks_clients, "WorkspaceClient", return_value=wc),
+        patch.object(databricks_clients, "dbsql") as dbsql,
+    ):
+        databricks_clients.SdkSqlExecutor(profile="DEFAULT", warehouse_id="abc")._connection()
+    kwargs = dbsql.connect.call_args.kwargs
+    assert "access_token" not in kwargs
+    assert kwargs["credentials_provider"]() is wc.config.authenticate
+
+
+def test_describe_extended_parses_real_predictive_optimization_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Row shape captured from DESCRIBE TABLE EXTENDED on a live UC managed table."""
+    monkeypatch.delenv("PBA_HTTP_PATH", raising=False)
+    from powerbi_analyzer import databricks_clients
+
+    rows = [
+        {"col_name": "c_custkey", "data_type": "bigint", "comment": None},
+        {"col_name": "Statistics", "data_type": "8725553 bytes, 150000 rows", "comment": ""},
+        {"col_name": "Type", "data_type": "MANAGED", "comment": ""},
+        {
+            "col_name": "Predictive Optimization",
+            "data_type": "ENABLE (inherited from METASTORE metastore_x)",
+            "comment": "",
+        },
+    ]
+    with patch.object(
+        databricks_clients, "WorkspaceClient", return_value=_patch_workspace_client()
+    ):
+        ex = databricks_clients.SdkSqlExecutor(profile="DEFAULT", warehouse_id="abc")
+    with patch.object(ex, "execute", side_effect=[rows, []]):
+        out = ex.describe_extended("c.s.t")
+    assert out["predictive_optimization"] is True
+    # Column-level statistics are not collected; must be unknown, not False.
+    assert out["has_column_stats"] is None
+
+
+@pytest.mark.parametrize("value", ["DISABLE", "DISABLE (inherited from CATALOG c)"])
+def test_describe_extended_predictive_optimization_disabled(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.delenv("PBA_HTTP_PATH", raising=False)
+    from powerbi_analyzer import databricks_clients
+
+    rows = [{"col_name": "Predictive Optimization", "data_type": value, "comment": ""}]
+    with patch.object(
+        databricks_clients, "WorkspaceClient", return_value=_patch_workspace_client()
+    ):
+        ex = databricks_clients.SdkSqlExecutor(profile="DEFAULT", warehouse_id="abc")
+    with patch.object(ex, "execute", side_effect=[rows, []]):
+        assert ex.describe_extended("c.s.t")["predictive_optimization"] is False
+
+
+def test_table_constraints_reads_uc_tables_api() -> None:
+    from powerbi_analyzer import databricks_clients
+
+    wc = MagicMock()
+    wc.tables.get.return_value.as_dict.return_value = {
+        "table_constraints": [{"primary_key_constraint": {"child_columns": ["id"], "rely": True}}]
+    }
+    with patch.object(databricks_clients, "WorkspaceClient", return_value=wc):
+        client = databricks_clients.SdkWorkspaceClient(profile="DEFAULT")
+    assert client.table_constraints("c.s.t") == [
+        {"primary_key_constraint": {"child_columns": ["id"], "rely": True}}
+    ]
+    wc.tables.get.assert_called_once_with("c.s.t")

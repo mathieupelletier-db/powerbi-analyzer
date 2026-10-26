@@ -46,7 +46,7 @@ def test_passes_small_unclustered():
     assert rule.check(cat, make_warehouse()).status is Status.PASS
 
 
-def test_passes_when_no_referenced_tables():
+def test_not_applicable_when_no_referenced_tables():
     cat = make_catalog_state(
         tables=[
             make_table_metadata(
@@ -57,4 +57,4 @@ def test_passes_when_no_referenced_tables():
         ],
         referenced_by_powerbi=[],
     )
-    assert rule.check(cat, make_warehouse()).status is Status.PASS
+    assert rule.check(cat, make_warehouse()).status is Status.NOT_APPLICABLE

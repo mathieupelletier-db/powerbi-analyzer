@@ -1,0 +1,7 @@
+{
+  "main.gold.fact_sales": [
+    {"primary_key_constraint": {"child_columns": ["id", "region_id"], "name": "pk_fact_sales", "rely": true}},
+    {"foreign_key_constraint": {"child_columns": ["customer_id"], "name": "fk_fact_customer",
+      "parent_columns": ["id"], "parent_table": "main.gold.dim_customer"}}
+  ]
+}

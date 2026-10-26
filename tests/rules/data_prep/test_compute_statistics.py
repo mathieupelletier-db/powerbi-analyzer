@@ -11,6 +11,16 @@ def test_passes_when_all_have_stats():
     assert rule.check(cat, make_warehouse()).status is Status.PASS
 
 
+def test_not_applicable_when_stats_not_collected():
+    cat = make_catalog_state(
+        tables=[make_table_metadata(full_name="main.gold.t", has_column_stats=None)],
+        referenced_by_powerbi=["main.gold.t"],
+    )
+    f = rule.check(cat, make_warehouse())
+    assert f.status is Status.NOT_APPLICABLE
+    assert "not collected" in f.summary
+
+
 def test_fails_when_missing_stats():
     cat = make_catalog_state(
         tables=[make_table_metadata(full_name="main.gold.t", has_column_stats=False)],
@@ -21,12 +31,12 @@ def test_fails_when_missing_stats():
     assert "main.gold.t" in f.evidence["tables"]
 
 
-def test_passes_when_no_referenced_tables():
+def test_not_applicable_when_no_referenced_tables():
     cat = make_catalog_state(
         tables=[make_table_metadata(full_name="main.gold.t", has_column_stats=False)],
         referenced_by_powerbi=[],
     )
-    assert rule.check(cat, make_warehouse()).status is Status.PASS
+    assert rule.check(cat, make_warehouse()).status is Status.NOT_APPLICABLE
 
 
 def test_fails_lists_all_missing_stats():

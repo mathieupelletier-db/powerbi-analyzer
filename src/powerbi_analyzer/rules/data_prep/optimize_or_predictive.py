@@ -4,6 +4,7 @@ from powerbi_analyzer.domain.catalog import CatalogState
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
 from powerbi_analyzer.domain.warehouse import WarehouseState
 from powerbi_analyzer.rules import rule
+from powerbi_analyzer.rules._attribution import attribution_gap
 
 RULE_ID = "DP-008"
 NAME = "Predictive Optimization or recent OPTIMIZE/VACUUM"
@@ -17,6 +18,11 @@ STALE_DAYS = 30
 
 @rule(RULE_ID)
 def check(catalog: CatalogState, warehouse: WarehouseState) -> Finding:
+    gap = attribution_gap(catalog, warehouse)
+    if gap:
+        return Finding.not_applicable(
+            RULE_ID, NAME, phase=PHASE, target=warehouse.name, reason=gap, docs_url=DOCS_URL
+        )
     cutoff = datetime.now(UTC) - timedelta(days=STALE_DAYS)
     referenced = set(catalog.referenced_by_powerbi)
     bad: list[str] = []

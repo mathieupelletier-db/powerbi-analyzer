@@ -2,12 +2,25 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 _FROZEN = ConfigDict(frozen=True)
+
+_NON_ALPHA = re.compile(r"[^a-z]")
+
+
+def is_powerbi_client(client_application: str | None) -> bool:
+    """True if a query-history client_application string identifies Power BI.
+
+    The value is client-reported and not standardized ("Power BI", "PowerBI",
+    "Power BI Desktop", ...), so compare on letters only, case-insensitively.
+    Keep in sync with collectors.databricks.POWERBI_CLIENT_SQL.
+    """
+    return "powerbi" in _NON_ALPHA.sub("", (client_application or "").lower())
 
 
 class QueryHistoryEntry(BaseModel):
@@ -47,3 +60,5 @@ class WarehouseState(BaseModel):
     region: str
     query_history: list[QueryHistoryEntry] = Field(default_factory=list)
     events: list[WarehouseEvent] = Field(default_factory=list)
+    # Set when system.access.table_lineage could not be read; referenced_tables is then empty.
+    table_lineage_error: str | None = None

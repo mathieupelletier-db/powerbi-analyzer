@@ -2,7 +2,8 @@
 # Required permissions:
 #   Power BI: Dataset.Read.All, Workspace.Read.All, Tenant.Read.All
 #   Databricks: USE CATALOG on each catalog; SELECT on system.query.history,
-#     system.compute.warehouse_events, system.information_schema.*; CAN_USE warehouse.
+#     system.compute.warehouse_events, system.information_schema.*,
+#     system.access.table_lineage (table attribution); CAN_USE warehouse.
 
 output:
   formats: [markdown, html]

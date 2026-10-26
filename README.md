@@ -84,7 +84,22 @@ Required permissions:
 
 - `USE CATALOG` on each scanned catalog
 - `SELECT` on `system.query.history`, `system.compute.warehouse_events`, `system.information_schema.*`
+- `SELECT` on `system.access.table_lineage` — attributes Power BI queries to tables. Without it,
+  table-level rules (DP-001, DP-003 … DP-010, SS-007) report `n/a` instead of a misleading pass.
 - `CAN_USE` on the warehouse
+
+Any Databricks CLI auth type works (PAT, OAuth U2M via `databricks auth login`, service principal);
+the SQL connection reuses the profile's credentials.
+
+How Power BI traffic is identified: `client_application` in `system.query.history` is
+client-reported (observed values include `PowerBI`, `Power BI Desktop`), so `pba` matches
+"powerbi" ignoring case, spaces, and punctuation.
+
+When `pba` cannot measure something it reports `n/a` with the reason rather than a pass:
+no `table_lineage` access, no Power BI queries against the scanned catalogs in the lookback
+window, or metadata not collected yet (column statistics for DP-009). `RELY` on primary keys is
+not exposed in `information_schema`; DP-004 reads it from the Unity Catalog Tables API and
+reports `n/a` if that call is not permitted.
 
 ### Scan everything from a config file
 
