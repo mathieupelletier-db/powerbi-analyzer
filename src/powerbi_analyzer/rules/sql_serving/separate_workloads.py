@@ -1,7 +1,7 @@
 from collections import Counter
 
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
-from powerbi_analyzer.domain.warehouse import WarehouseState
+from powerbi_analyzer.domain.warehouse import WarehouseState, is_powerbi_client
 from powerbi_analyzer.rules import rule
 
 RULE_ID = "SS-008"
@@ -14,7 +14,7 @@ DOCS_URL = "https://docs.databricks.com/sql/admin/sql-endpoints.html"
 
 def _bucket(app: str | None) -> str:
     a = (app or "").lower()
-    if "power bi" in a or "tableau" in a or ("dbt" in a and "ide" in a):
+    if is_powerbi_client(app) or "tableau" in a or ("dbt" in a and "ide" in a):
         return "bi"
     if "etl" in a or "airflow" in a or "dbt" in a or "jobs" in a:
         return "etl"

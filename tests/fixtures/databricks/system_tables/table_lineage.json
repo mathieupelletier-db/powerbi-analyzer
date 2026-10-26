@@ -1,0 +1,10 @@
+[
+  {
+    "statement_id": "q1",
+    "source_tables": "[\"main.gold.fact_sales\",\"other.sales.dim_region\"]"
+  },
+  {
+    "statement_id": "q3",
+    "source_tables": "[\"main.staging.orders\"]"
+  }
+]

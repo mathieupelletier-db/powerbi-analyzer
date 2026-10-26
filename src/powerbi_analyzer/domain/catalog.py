@@ -23,7 +23,7 @@ class ForeignKey(BaseModel):
     from_columns: list[str]
     to_table: str
     to_columns: list[str]
-    rely: bool = False
+    rely: bool | None = None
 
 
 class ClusteringInfo(BaseModel):
@@ -39,12 +39,14 @@ class TableMetadata(BaseModel):
     columns: list[ColumnMetadata]
     primary_key: list[str] | None = None
     foreign_keys: list[ForeignKey] = Field(default_factory=list)
-    rely: bool = False
+    # None = unknown (Tables API unavailable); information_schema does not expose RELY.
+    rely: bool | None = None
     clustering: ClusteringInfo
     last_optimize_at: datetime | None = None
     last_vacuum_at: datetime | None = None
     predictive_optimization: bool = False
-    has_column_stats: bool = False
+    # None = not collected.
+    has_column_stats: bool | None = None
     is_materialized_view: bool = False
     size_bytes: int | None = None
 

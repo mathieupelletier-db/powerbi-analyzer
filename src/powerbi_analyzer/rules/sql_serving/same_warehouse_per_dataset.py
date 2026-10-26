@@ -1,8 +1,9 @@
 from collections import defaultdict
 
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
-from powerbi_analyzer.domain.warehouse import WarehouseState
+from powerbi_analyzer.domain.warehouse import WarehouseState, is_powerbi_client
 from powerbi_analyzer.rules import rule
+from powerbi_analyzer.rules._attribution import history_gap
 
 RULE_ID = "SS-007"
 NAME = "Same warehouse for same dataset"
@@ -14,9 +15,14 @@ DOCS_URL = "https://docs.databricks.com/sql/admin/sql-endpoints.html#cache"
 
 @rule(RULE_ID)
 def check(warehouse: WarehouseState) -> Finding:
+    gap = history_gap(warehouse)
+    if gap:
+        return Finding.not_applicable(
+            RULE_ID, NAME, phase=PHASE, target=warehouse.name, reason=gap, docs_url=DOCS_URL
+        )
     by_table: dict[str, set[str]] = defaultdict(set)
     for q in warehouse.query_history:
-        if not (q.client_application or "").lower().startswith("power bi"):
+        if not is_powerbi_client(q.client_application):
             continue
         wh_id = q.warehouse_id or q.all_purpose_cluster_id or "unknown"
         for t in q.referenced_tables or []:

@@ -38,10 +38,13 @@ class SdkSqlExecutor(SqlExecutor):
             host = (cfg.host or "").replace("https://", "").rstrip("/")
             if not host:
                 raise ValueError(f"Databricks profile {self.profile!r} has no host configured.")
+            # Delegate auth to the SDK config (PAT, OAuth, databricks-cli, ...).
+            # access_token=cfg.token is None for OAuth profiles, which makes the
+            # connector fall back to an interactive browser login and hang.
             self._conn = dbsql.connect(
                 server_hostname=host,
                 http_path=self._http_path,
-                access_token=cfg.token,
+                credentials_provider=lambda: cfg.authenticate,
             )
         return self._conn
 
@@ -62,16 +65,19 @@ class SdkSqlExecutor(SqlExecutor):
             "predictive_optimization": False,
             "size_bytes": None,
             "is_materialized_view": False,
-            "has_column_stats": False,
+            # Column-level stats need per-column DESCRIBE; not collected yet.
+            "has_column_stats": None,
         }
         for r in rows:
-            k = (r.get("col_name") or "").strip().lower()
+            # Keys appear as e.g. "Predictive Optimization"; compare without spaces.
+            k = (r.get("col_name") or "").strip().lower().replace(" ", "")
             v = r.get("data_type") or r.get("comment")
             if k == "clusteringcolumns":
                 out["clustering_columns"] = (v or "").strip("[]").split(",") if v else []
                 out["clustering_kind"] = "liquid" if out["clustering_columns"] else "none"
             elif k == "predictiveoptimization":
-                out["predictive_optimization"] = str(v).lower() == "enabled"
+                # e.g. "ENABLE (inherited from METASTORE ...)" or "DISABLE"
+                out["predictive_optimization"] = str(v).strip().lower().startswith("enable")
             elif k == "type" and v == "MATERIALIZED_VIEW":
                 out["is_materialized_view"] = True
         try:
@@ -94,6 +100,12 @@ class SdkWorkspaceClient:
         wh = self._wc.warehouses.get(warehouse_id)
         raw: dict[str, Any] = dict(wh.as_dict())
         return raw
+
+    def table_constraints(self, full_name: str) -> list[dict[str, Any]]:
+        constraints: list[dict[str, Any]] = (
+            self._wc.tables.get(full_name).as_dict().get("table_constraints") or []
+        )
+        return constraints
 
     def workspace_region(self) -> str:
         host = self._wc.config.host or ""

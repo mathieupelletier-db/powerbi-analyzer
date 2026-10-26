@@ -1,9 +1,12 @@
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from powerbi_analyzer.domain.warehouse import (
     QueryHistoryEntry,
     WarehouseEvent,
     WarehouseState,
+    is_powerbi_client,
 )
 
 
@@ -50,3 +53,16 @@ def test_warehouse_event():
         cluster_count=3,
     )
     assert e.cluster_count == 3
+
+
+@pytest.mark.parametrize(
+    "app",
+    ["Power BI", "Power BI Desktop", "Power BI Service", "PowerBI", "power bi", "POWER-BI"],
+)
+def test_is_powerbi_client_matches_known_variants(app: str) -> None:
+    assert is_powerbi_client(app)
+
+
+@pytest.mark.parametrize("app", [None, "", "Tableau", "DBeaver", "Databricks SQL Editor", "dbt"])
+def test_is_powerbi_client_rejects_other_clients(app: str | None) -> None:
+    assert not is_powerbi_client(app)

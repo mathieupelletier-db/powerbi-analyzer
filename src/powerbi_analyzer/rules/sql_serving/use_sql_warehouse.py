@@ -1,5 +1,5 @@
 from powerbi_analyzer.domain.finding import Finding, Phase, Severity
-from powerbi_analyzer.domain.warehouse import WarehouseState
+from powerbi_analyzer.domain.warehouse import WarehouseState, is_powerbi_client
 from powerbi_analyzer.rules import rule
 
 RULE_ID = "SS-001"
@@ -15,7 +15,7 @@ def check(warehouse: WarehouseState) -> Finding:
     offenders = [
         q
         for q in warehouse.query_history
-        if (q.client_application or "").lower().startswith("power bi") and q.all_purpose_cluster_id
+        if is_powerbi_client(q.client_application) and q.all_purpose_cluster_id
     ]
     target = warehouse.name
     if not offenders:

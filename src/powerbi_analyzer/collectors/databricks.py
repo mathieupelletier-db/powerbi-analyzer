@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
@@ -19,7 +20,13 @@ from powerbi_analyzer.domain.warehouse import (
     QueryHistoryEntry,
     WarehouseEvent,
     WarehouseState,
+    is_powerbi_client,
 )
+
+log = logging.getLogger(__name__)
+
+# SQL twin of domain.warehouse.is_powerbi_client — keep the two in sync.
+POWERBI_CLIENT_SQL = "lower(regexp_replace(client_application, '[^A-Za-z]', '')) LIKE '%powerbi%'"
 
 GOLD_HINTS = {"gold", "serving", "mart", "marts", "presentation"}
 SILVER_HINTS = {"silver", "curated"}
@@ -29,6 +36,7 @@ BRONZE_HINTS = {"bronze", "raw", "landing"}
 class WorkspaceClient(Protocol):
     def get_warehouse(self, warehouse_id: str) -> dict[str, Any]: ...
     def workspace_region(self) -> str: ...
+    def table_constraints(self, full_name: str) -> list[dict[str, Any]]: ...
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -62,13 +70,32 @@ def _as_list(value: Any) -> list[Any]:
         return []
     if isinstance(value, list):
         return value
+    if isinstance(value, tuple):
+        return list(value)
     if isinstance(value, str):
         try:
             parsed = json.loads(value)
             return parsed if isinstance(parsed, list) else []
         except (ValueError, TypeError):
             return []
+    # numpy arrays (pandas-backed result paths) expose .tolist()
+    tolist = getattr(value, "tolist", None)
+    if callable(tolist):
+        result = tolist()
+        return result if isinstance(result, list) else []
     return []
+
+
+def _lineage_error_category(exc: Exception) -> str:
+    """Report-safe summary of a lineage failure; raw text can carry SQL or hostnames."""
+    text = str(exc).upper()
+    if any(k in text for k in ("PERMISSION_DENIED", "INSUFFICIENT_PERMISSIONS", "UNAUTHORIZED")):
+        return "permission denied"
+    if isinstance(exc, PermissionError):
+        return "permission denied"
+    if "TABLE_OR_VIEW_NOT_FOUND" in text or "SCHEMA_NOT_FOUND" in text:
+        return "system table not enabled"
+    return f"query failed ({type(exc).__name__})"
 
 
 def _parse_dt(v: Any) -> datetime | None:
@@ -131,9 +158,12 @@ class DatabricksCollector(Collector):
             f"SELECT * FROM system.query.history "
             f"WHERE start_time >= TIMESTAMP '{since.isoformat()}' "
             f"AND (compute.warehouse_id = '{self.warehouse_id}' "
-            f"     OR client_application LIKE '%Power BI%')"
+            f"     OR {POWERBI_CLIENT_SQL})"
         )
-        history = [self._history_row(r) for r in history_rows]
+        lineage, lineage_error = self._tables_by_statement(since)
+        history = [
+            self._history_row(r, lineage.get(str(r["statement_id"]), [])) for r in history_rows
+        ]
 
         events_rows = self.sql.execute(
             f"SELECT * FROM system.compute.warehouse_events "
@@ -161,10 +191,37 @@ class DatabricksCollector(Collector):
             region=region,
             query_history=history,
             events=events,
+            table_lineage_error=lineage_error,
         )
 
+    def _tables_by_statement(self, since: datetime) -> tuple[dict[str, list[str]], str | None]:
+        """Map Power BI statement_id -> source tables via system.access.table_lineage.
+
+        system.query.history has no table list (read_partitions is a count), so
+        lineage is the documented join (statement_id is a FK to query history).
+        Lineage access is often granted separately; degrade rather than abort.
+        """
+        try:
+            rows = self.sql.execute(
+                f"SELECT statement_id, "
+                f"to_json(array_sort(collect_set(source_table_full_name))) AS source_tables "
+                f"FROM system.access.table_lineage "
+                f"WHERE event_time >= TIMESTAMP '{since.isoformat()}' "
+                f"AND source_table_full_name IS NOT NULL "
+                f"AND statement_id IN (SELECT statement_id FROM system.query.history "
+                f"WHERE start_time >= TIMESTAMP '{since.isoformat()}' "
+                f"AND {POWERBI_CLIENT_SQL}) "
+                f"GROUP BY statement_id"
+            )
+        except Exception as exc:
+            log.warning("system.access.table_lineage unavailable: %s", exc)
+            return {}, _lineage_error_category(exc)
+        return {
+            str(r["statement_id"]): [str(t) for t in _as_list(r.get("source_tables"))] for r in rows
+        }, None
+
     @staticmethod
-    def _history_row(r: dict[str, Any]) -> QueryHistoryEntry:
+    def _history_row(r: dict[str, Any], tables: list[str] | None = None) -> QueryHistoryEntry:
         compute = _as_dict(r.get("compute"))
         return QueryHistoryEntry(
             query_id=r["statement_id"],
@@ -179,8 +236,35 @@ class DatabricksCollector(Collector):
             compute_used_mb=r.get("compute_used_mb"),
             rows_produced=r.get("produced_rows"),
             spilled_to_disk=int(r.get("spilled_local_bytes") or 0) > 0,
-            referenced_tables=[str(x) for x in _as_list(r.get("read_partitions"))],
+            referenced_tables=list(tables or []),
         )
+
+    def _uc_constraints(self, full_name: str) -> dict[str, Any] | None:
+        """PK/FK incl. RELY from the UC Tables API; None if unavailable.
+
+        information_schema does not expose RELY. The Tables API returns
+        `rely: true` when declared and omits the field otherwise.
+        """
+        try:
+            raw = self.ws.table_constraints(full_name)
+        except Exception as exc:
+            log.warning("tables.get(%s) failed; RELY unknown: %s", full_name, exc)
+            return None
+        out: dict[str, Any] = {"pk": None, "rely": None, "fks": []}
+        for c in raw:
+            if pk := c.get("primary_key_constraint"):
+                out["pk"] = list(pk.get("child_columns", []))
+                out["rely"] = bool(pk.get("rely", False))
+            elif fk := c.get("foreign_key_constraint"):
+                out["fks"].append(
+                    ForeignKey(
+                        from_columns=list(fk.get("child_columns", [])),
+                        to_table=fk.get("parent_table", ""),
+                        to_columns=list(fk.get("parent_columns", [])),
+                        rely=bool(fk.get("rely", False)),
+                    )
+                )
+        return out
 
     def _catalog_state(self, wh: WarehouseState) -> CatalogState:
         clauses: list[str] = []
@@ -202,6 +286,16 @@ class DatabricksCollector(Collector):
         cons_rows = self.sql.execute(
             f"SELECT * FROM system.information_schema.table_constraints WHERE {catalog_filter}"
         )
+        # table_constraints has no column list; key columns live in key_column_usage.
+        kcu_rows = self.sql.execute(
+            f"SELECT * FROM system.information_schema.key_column_usage WHERE {catalog_filter}"
+        )
+        key_columns: dict[tuple[str, str], list[tuple[int, str]]] = {}
+        for k in kcu_rows:
+            full = f"{k['table_catalog']}.{k['table_schema']}.{k['table_name']}"
+            key_columns.setdefault((full, k["constraint_name"]), []).append(
+                (int(k.get("ordinal_position") or 0), k["column_name"])
+            )
 
         cols_by_table: dict[str, list[ColumnMetadata]] = {}
         for col in col_rows:
@@ -218,19 +312,25 @@ class DatabricksCollector(Collector):
         cons_by_table: dict[str, dict[str, Any]] = {}
         for con in cons_rows:
             full = f"{con['table_catalog']}.{con['table_schema']}.{con['table_name']}"
-            cons_by_table.setdefault(full, {"pk": None, "rely": False, "fks": []})
+            cons_by_table.setdefault(full, {"pk": None, "rely": None, "fks": []})
             if con["constraint_type"] == "PRIMARY KEY":
-                cons_by_table[full]["pk"] = list(con.get("key_columns", []))
-                cons_by_table[full]["rely"] = bool(con.get("rely"))
+                cols = sorted(key_columns.get((full, con.get("constraint_name", "")), []))
+                cons_by_table[full]["pk"] = [c for _, c in cols] or list(con.get("key_columns", []))
+                # RELY is not in information_schema; resolved from the Tables API below.
+                cons_by_table[full]["rely"] = con.get("rely")
             elif con["constraint_type"] == "FOREIGN KEY":
                 cons_by_table[full]["fks"].append(
                     ForeignKey(
                         from_columns=list(con.get("key_columns", [])),
                         to_table=con.get("referenced_table", ""),
                         to_columns=list(con.get("referenced_columns", [])),
-                        rely=bool(con.get("rely")),
+                        rely=con.get("rely"),
                     )
                 )
+        for full in cons_by_table:
+            uc = self._uc_constraints(full)
+            if uc is not None:
+                cons_by_table[full] = uc
 
         tables: list[TableMetadata] = []
         for t in tbl_rows:
@@ -244,7 +344,7 @@ class DatabricksCollector(Collector):
                     columns=cols_by_table.get(full, []),
                     primary_key=cons_by_table.get(full, {}).get("pk"),
                     foreign_keys=cons_by_table.get(full, {}).get("fks", []),
-                    rely=cons_by_table.get(full, {}).get("rely", False),
+                    rely=cons_by_table.get(full, {}).get("rely"),
                     clustering=ClusteringInfo(
                         kind=cluster_kind,
                         columns=list(ext.get("clustering_columns", [])),
@@ -252,18 +352,21 @@ class DatabricksCollector(Collector):
                     last_optimize_at=_parse_dt(ext.get("last_optimize_at")),
                     last_vacuum_at=_parse_dt(ext.get("last_vacuum_at")),
                     predictive_optimization=bool(ext.get("predictive_optimization")),
-                    has_column_stats=bool(ext.get("has_column_stats")),
+                    has_column_stats=ext.get("has_column_stats"),
                     is_materialized_view=bool(ext.get("is_materialized_view")),
                     size_bytes=ext.get("size_bytes"),
                 )
             )
 
+        # UC identifiers are case-insensitive; lineage reports them lowercased.
+        scopes = [c.lower() + "." for c in self.catalogs]
         referenced = sorted(
             {
-                t
+                t.lower()
                 for q in wh.query_history
+                if is_powerbi_client(q.client_application)
                 for t in (q.referenced_tables or [])
-                if t and any(t.startswith(c + ".") for c in self.catalogs)
+                if t and t.lower().startswith(tuple(scopes))
             }
         )
         return CatalogState(tables=tables, referenced_by_powerbi=referenced)
